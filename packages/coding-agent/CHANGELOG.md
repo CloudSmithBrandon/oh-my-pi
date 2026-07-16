@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Routed the print-mode assistant-error/aborted exit, RPC `pi.shutdown()` and stdin-EOF shutdowns, and the extension command-context `shutdown()` through the awaited, idempotent `session.dispose()` before `process.exit()`, so the bounded browser reaper (`releaseTabsForOwner`) always runs and OMP-owned Chromium no longer outlives the process ([#5643](https://github.com/can1357/oh-my-pi/issues/5643)).
+
 ## [17.0.0] - 2026-07-15
 
 ### Breaking Changes
