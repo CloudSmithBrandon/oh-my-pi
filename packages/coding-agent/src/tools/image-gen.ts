@@ -557,12 +557,32 @@ async function findGeminiImageCredentials(
 	return null;
 }
 
+const DEFAULT_AGNES_BASE_URL = "https://apihub.agnes-ai.com/v1";
+
+function resolveAgnesImageBaseUrl(modelRegistry: ModelRegistry | undefined, modelId?: string): string {
+	if (!modelRegistry) return DEFAULT_AGNES_BASE_URL;
+	const registryWithFind = modelRegistry as ModelRegistry & {
+		find?: (provider: string, modelId: string) => Model | undefined;
+	};
+	if (modelId) {
+		const model = registryWithFind.find?.("agnes", modelId);
+		if (model?.baseUrl) return model.baseUrl.replace(/\/+$/, "");
+	}
+	const providerBaseUrl = modelRegistry.getProviderBaseUrl("agnes");
+	return (providerBaseUrl ?? DEFAULT_AGNES_BASE_URL).replace(/\/+$/, "");
+}
+
 async function findAgnesImageCredentials(
 	modelRegistry?: ModelRegistry,
 	sessionId?: string,
+	modelId?: string,
 ): Promise<ImageApiKey | null> {
 	if (modelRegistry) {
-		const apiKey = await modelRegistry.getApiKeyForProvider("agnes", sessionId);
+		const effectiveModelId = modelId ?? DEFAULT_AGNES_IMAGE_MODEL;
+		const apiKey = await modelRegistry.getApiKeyForProvider("agnes", sessionId, {
+			baseUrl: resolveAgnesImageBaseUrl(modelRegistry, effectiveModelId),
+			modelId: effectiveModelId,
+		});
 		if (apiKey) return { provider: "agnes", apiKey };
 		return null;
 	}
@@ -676,7 +696,11 @@ async function findImageApiKey(
 ): Promise<ImageApiKey | null> {
 	switch (provider) {
 		case "agnes":
-			return findAgnesImageCredentials(modelRegistry, sessionId);
+			return findAgnesImageCredentials(
+				modelRegistry,
+				sessionId,
+				activeModel?.provider === "agnes" ? activeModel.id : undefined,
+			);
 		case "openai":
 			return findOpenAIHostedImageCredentials(modelRegistry, activeModel, sessionId);
 		case "openai-codex":
@@ -1500,8 +1524,13 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 					if (provider === "agnes") {
 						const promptText = assemblePrompt(params);
 						const agnesModel = resolvedModel || DEFAULT_AGNES_IMAGE_MODEL;
+						const agnesBaseUrl = resolveAgnesImageBaseUrl(ctx.modelRegistry, agnesModel);
 						const agnesApiKey: ApiKey = ctx.modelRegistry
-							? ctx.modelRegistry.resolver("agnes", { sessionId })
+							? ctx.modelRegistry.resolver("agnes", {
+									sessionId,
+									baseUrl: agnesBaseUrl,
+									modelId: agnesModel,
+								})
 							: apiKey.apiKey;
 
 						const size = resolveOpenAIImageSize(params.aspect_ratio, params.image_size) ?? "1024x1024";
@@ -1517,7 +1546,7 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 						const rawText = await withAuth(
 							agnesApiKey,
 							async key => {
-								const resp = await fetchImpl("https://apihub.agnes-ai.com/v1/images/generations", {
+								const resp = await fetchImpl(`${agnesBaseUrl}/images/generations`, {
 									method: "POST",
 									headers: {
 										"Content-Type": "application/json",

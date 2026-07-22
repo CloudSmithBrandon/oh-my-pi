@@ -4506,7 +4506,7 @@ export const SETTINGS_SCHEMA = {
 					value: "auto",
 					label: "Auto",
 					description:
-						"Priority: per-request provider > configured provider > active session provider > GPT model image tool > Codex subscription > Antigravity > xAI > OpenRouter > Gemini",
+						"Priority: per-request provider > configured provider > active session provider > GPT model image tool > Codex subscription > Antigravity > xAI > OpenRouter > Gemini > Agnes",
 				},
 				{
 					value: "openai",
@@ -4531,6 +4531,11 @@ export const SETTINGS_SCHEMA = {
 				},
 				{ value: "gemini", label: "Gemini", description: "Requires GEMINI_API_KEY" },
 				{ value: "openrouter", label: "OpenRouter", description: "Requires OPENROUTER_API_KEY" },
+				{
+					value: "agnes",
+					label: "Agnes AI",
+					description: "Requires AGNES_API_KEY or an Agnes provider entry in models.yml",
+				},
 			],
 		},
 	},

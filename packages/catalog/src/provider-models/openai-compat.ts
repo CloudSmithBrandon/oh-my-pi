@@ -1088,10 +1088,22 @@ export function xaiModelManagerOptions(config?: XaiModelManagerConfig): ModelMan
 export interface AgnesModelManagerConfig {
 	apiKey?: string;
 	baseUrl?: string;
+	fetch?: FetchImpl;
 }
 
 export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): ModelManagerOptions<"openai-completions"> {
-	return createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
+	const options = createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
+	return {
+		...options,
+		...(options.fetchDynamicModels
+			? {
+					fetchDynamicModels: async () => {
+						const models = await options.fetchDynamicModels?.();
+						return models?.map(model => ({ ...model, supportsTools: false })) ?? null;
+					},
+				}
+			: undefined),
+	};
 }
 
 export interface XaiOAuthModelManagerConfig {

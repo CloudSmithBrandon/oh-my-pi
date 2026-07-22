@@ -108,6 +108,17 @@ describe("settings layout", () => {
 		});
 	});
 
+	it("exposes Agnes as a selectable option in the providers image submenu", () => {
+		const def = getSettingsForTab("providers").find(item => item.path === "providers.image");
+		expect(def).toBeDefined();
+		if (!def) throw new Error("providers.image setting definition missing");
+		expect(def.type).toBe("submenu");
+		if (def.type !== "submenu") throw new Error("providers.image should render as a submenu");
+		const values = def.options.map(option => option.value);
+		expect(values).toContain("agnes");
+		expect(values).toEqual([...SETTINGS_SCHEMA["providers.image"].values]);
+	});
+
 	it("exposes retry fallback chains as editable JSON in the model settings", () => {
 		const def = getSettingsForTab("model").find(item => item.path === "retry.fallbackChains");
 
