@@ -7213,6 +7213,54 @@
 			}
 		}
 	},
+	"agnes": {
+		"agnes-2.0-flash": {
+			"id": "agnes-2.0-flash",
+			"name": "Agnes 2.0 Flash",
+			"api": "openai-completions",
+			"provider": "agnes",
+			"baseUrl": "https://apihub.agnes-ai.com/v1",
+			"reasoning": true,
+			"input": [
+				"text"
+			],
+			"cost": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0
+			},
+			"contextWindow": 128000,
+			"maxTokens": 16384,
+			"thinking": {
+				"mode": "effort",
+				"efforts": [
+					"low",
+					"medium",
+					"high"
+				]
+			}
+		},
+		"agnes-image-2.1-flash": {
+			"id": "agnes-image-2.1-flash",
+			"name": "Agnes Image 2.1 Flash",
+			"api": "openai-completions",
+			"provider": "agnes",
+			"baseUrl": "https://apihub.agnes-ai.com/v1",
+			"reasoning": false,
+			"input": [
+				"text"
+			],
+			"cost": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0
+			},
+			"contextWindow": 32000,
+			"maxTokens": 4096
+		}
+	},
 	"alibaba-coding-plan": {
 		"glm-4.7": {
 			"id": "glm-4.7",
