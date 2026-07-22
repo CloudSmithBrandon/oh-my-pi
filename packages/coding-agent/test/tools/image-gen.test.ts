@@ -12,6 +12,7 @@ import {
 import { removeWithRetries } from "@oh-my-pi/pi-utils";
 
 const originalOpenRouterKey = Bun.env.OPENROUTER_API_KEY;
+const originalAgnesKey = Bun.env.AGNES_API_KEY;
 const generatedImagePaths: string[] = [];
 
 afterEach(async () => {
@@ -20,6 +21,12 @@ afterEach(async () => {
 		delete Bun.env.OPENROUTER_API_KEY;
 	} else {
 		Bun.env.OPENROUTER_API_KEY = originalOpenRouterKey;
+	}
+	setImageProviderOrder([]);
+	if (originalAgnesKey === undefined) {
+		delete Bun.env.AGNES_API_KEY;
+	} else {
+		Bun.env.AGNES_API_KEY = originalAgnesKey;
 	}
 	setImageProviderOrder([]);
 });
@@ -805,7 +812,7 @@ describe("imageGenTool", () => {
 	});
 
 	it("routes Agnes image generation with b64_json to apihub.agnes-ai.com", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 		let requestUrl: string | undefined;
 		let requestBody: Record<string, unknown> | undefined;
 		let authorization: string | undefined;
@@ -864,8 +871,77 @@ describe("imageGenTool", () => {
 		expect(await Bun.file(savedPath).bytes()).toEqual(Buffer.from("fake-agnes-image"));
 	});
 
+	it("scopes Agnes auth and request URL to a provider baseUrl override", async () => {
+		setImageProviderOrder(["agnes"]);
+		let requestUrl: string | undefined;
+		let resolverProvider: string | undefined;
+		let resolverOptions: { sessionId?: string; baseUrl?: string; modelId?: string } | undefined;
+		let getApiKeyOptions: { baseUrl?: string; modelId?: string } | undefined;
+		const customBaseUrl = "https://proxy.example/agnes/v1";
+
+		const fetchMock: typeof fetch = (async (input: string | URL | Request, _init?: RequestInit) => {
+			requestUrl = input.toString();
+			return new Response(
+				JSON.stringify({
+					data: [{ b64_json: Buffer.from("scoped-agnes-image").toString("base64") }],
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			);
+		}) as unknown as typeof fetch;
+
+		const ctx: CustomToolContext = {
+			fetch: fetchMock,
+			sessionManager: {
+				getCwd: () => "/tmp",
+				getSessionId: () => "test-session",
+			} as unknown as ReadonlySessionManager,
+			modelRegistry: {
+				getApiKeyForProvider: async (
+					_provider: string,
+					_sessionId?: string,
+					options?: { baseUrl?: string; modelId?: string },
+				) => {
+					getApiKeyOptions = options;
+					return "scoped-agnes-key";
+				},
+				getProviderBaseUrl: (provider: string) => (provider === "agnes" ? customBaseUrl : undefined),
+				getAll: () => [],
+				authStorage: {
+					hasNonEnvCredential: () => false,
+					rotateSessionCredential: async () => false,
+				},
+				resolver: ((provider: string, options?: { sessionId?: string; baseUrl?: string; modelId?: string }) => {
+					resolverProvider = provider;
+					resolverOptions = options;
+					return async () => "scoped-agnes-key";
+				}) as never,
+			} as unknown as ModelRegistry,
+			model: undefined,
+			isIdle: () => true,
+			hasQueuedMessages: () => false,
+			abort: () => {},
+		};
+
+		const result = await imageGenTool.execute("call-agnes-scoped", { subject: "a cat" }, undefined, ctx);
+		generatedImagePaths.push(...(result.details?.imagePaths ?? []));
+
+		expect(requestUrl).toBe(`${customBaseUrl}/images/generations`);
+		expect(resolverProvider).toBe("agnes");
+		expect(resolverOptions).toEqual({
+			sessionId: "test-session",
+			baseUrl: customBaseUrl,
+			modelId: "agnes-image-2.1-flash",
+		});
+		expect(getApiKeyOptions).toEqual({ baseUrl: customBaseUrl, modelId: "agnes-image-2.1-flash" });
+		expect(result.details?.provider).toBe("agnes");
+		expect(result.details?.imageCount).toBe(1);
+		const savedPath = result.details?.imagePaths[0];
+		if (!savedPath) throw new Error("Expected generated image path");
+		expect(await Bun.file(savedPath).bytes()).toEqual(Buffer.from("scoped-agnes-image"));
+	});
+
 	it("resolves Agnes credentials from AGNES_API_KEY env var when no model registry", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 		Bun.env.AGNES_API_KEY = "env-agnes-key";
 		let authorization: string | undefined;
 
@@ -901,7 +977,7 @@ describe("imageGenTool", () => {
 	});
 
 	it("maps Agnes aspect ratios to correct image sizes", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 		const sizes: string[] = [];
 
 		const fetchMock: typeof fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
@@ -922,7 +998,7 @@ describe("imageGenTool", () => {
 				getSessionId: () => "test-session",
 			} as unknown as ReadonlySessionManager,
 			modelRegistry: {
-				getApiKeyForProvider: async () => "test-agnes-key",
+				getApiKeyForProvider: async (provider: string) => (provider === "agnes" ? "test-agnes-key" : undefined),
 				getProviderBaseUrl: () => undefined,
 				getAll: () => [],
 				authStorage: { hasNonEnvCredential: () => false, rotateSessionCredential: async () => false },
@@ -947,7 +1023,7 @@ describe("imageGenTool", () => {
 	});
 
 	it("throws ProviderHttpError on Agnes API failure with parsed error message", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 
 		const fetchMock: typeof fetch = (async () => {
 			return new Response(JSON.stringify({ error: { message: "rate limit exceeded" } }), {
@@ -963,7 +1039,7 @@ describe("imageGenTool", () => {
 				getSessionId: () => "test-session",
 			} as unknown as ReadonlySessionManager,
 			modelRegistry: {
-				getApiKeyForProvider: async () => "test-agnes-key",
+				getApiKeyForProvider: async (provider: string) => (provider === "agnes" ? "test-agnes-key" : undefined),
 				getProviderBaseUrl: () => undefined,
 				getAll: () => [],
 				authStorage: { hasNonEnvCredential: () => false, rotateSessionCredential: async () => false },
@@ -976,18 +1052,19 @@ describe("imageGenTool", () => {
 		};
 
 		await expect(imageGenTool.execute("call-agnes-error", { subject: "x" }, undefined, ctx)).rejects.toThrow(
-			/rate limit exceeded/,
+			/Image generation failed for all credentialed providers: agnes/,
 		);
 	});
 
 	it("handles Agnes URL-based image response fallback", async () => {
-		setPreferredImageProvider("agnes");
-		let requestUrl: string | undefined;
+		setImageProviderOrder(["agnes"]);
+		let agnesRequestUrl: string | undefined;
+		let downloadUrl: string | undefined;
 
 		const fetchMock: typeof fetch = (async (input: string | URL | Request, _init?: RequestInit) => {
 			const url = input.toString();
-			requestUrl = url;
 			if (url.includes("apihub.agnes-ai.com")) {
+				agnesRequestUrl = url;
 				return new Response(
 					JSON.stringify({
 						data: [{ url: "https://example.com/agnes-result.webp" }],
@@ -996,6 +1073,7 @@ describe("imageGenTool", () => {
 				);
 			}
 			if (url === "https://example.com/agnes-result.webp") {
+				downloadUrl = url;
 				return new Response(Buffer.from("url-image-bytes"), {
 					status: 200,
 					headers: { "content-type": "image/webp" },
@@ -1011,7 +1089,7 @@ describe("imageGenTool", () => {
 				getSessionId: () => "test-session",
 			} as unknown as ReadonlySessionManager,
 			modelRegistry: {
-				getApiKeyForProvider: async () => "test-agnes-key",
+				getApiKeyForProvider: async (provider: string) => (provider === "agnes" ? "test-agnes-key" : undefined),
 				getProviderBaseUrl: () => undefined,
 				getAll: () => [],
 				authStorage: { hasNonEnvCredential: () => false, rotateSessionCredential: async () => false },
@@ -1026,7 +1104,8 @@ describe("imageGenTool", () => {
 		const result = await imageGenTool.execute("call-agnes-url", { subject: "a landscape" }, undefined, ctx);
 		generatedImagePaths.push(...(result.details?.imagePaths ?? []));
 
-		expect(requestUrl).toBe("https://apihub.agnes-ai.com/v1/images/generations");
+		expect(agnesRequestUrl).toBe("https://apihub.agnes-ai.com/v1/images/generations");
+		expect(downloadUrl).toBe("https://example.com/agnes-result.webp");
 		expect(result.details?.provider).toBe("agnes");
 		expect(result.details?.imageCount).toBe(1);
 		const savedPath = result.details?.imagePaths[0];
@@ -1035,7 +1114,7 @@ describe("imageGenTool", () => {
 	});
 
 	it("returns 'No image data' when Agnes returns empty data array", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 
 		const fetchMock: typeof fetch = (async () => {
 			return new Response(JSON.stringify({ data: [] }), {
@@ -1051,7 +1130,7 @@ describe("imageGenTool", () => {
 				getSessionId: () => "test-session",
 			} as unknown as ReadonlySessionManager,
 			modelRegistry: {
-				getApiKeyForProvider: async () => "test-agnes-key",
+				getApiKeyForProvider: async (provider: string) => (provider === "agnes" ? "test-agnes-key" : undefined),
 				getProviderBaseUrl: () => undefined,
 				getAll: () => [],
 				authStorage: { hasNonEnvCredential: () => false, rotateSessionCredential: async () => false },
