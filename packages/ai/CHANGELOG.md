@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added Agnes AI provider definition (`agnes`) with `AGNES_API_KEY` env key. Registered in the provider registry for `/login` discovery and model resolution.
+
 ## [17.0.6] - 2026-07-20
 
 ### Fixed

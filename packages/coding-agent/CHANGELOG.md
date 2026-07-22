@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added Agnes AI (`agnes-ai.com`) as a first-class image generation provider. `providers.image: "agnes"` routes `generate_image` to Agnes's `/v1/images/generations` endpoint with `b64_json` response format and automatic aspect-ratio-to-size mapping. Agnes uses the OpenAI-completions wire protocol for chat; the image path is a separate dispatch case due to the older endpoint. Credentials via `AGNES_API_KEY` env var. Default model: `agnes-image-2.1-flash`.
+
 ## [17.0.7] - 2026-07-21
 
 ### Fixed

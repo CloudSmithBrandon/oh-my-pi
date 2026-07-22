@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added Agnes AI (`agnes`) as a supported provider with bundled fallback models (`agnes-2.0-flash`, `agnes-image-2.1-flash`), catalog descriptor, and OpenAI-completions model manager factory. API key via `AGNES_API_KEY`. Catalog discovery with `dynamicModelsAuthoritative: true` for runtime model enumeration via `/v1/models`.
+
 ## [17.0.6] - 2026-07-20
 
 ### Added
