@@ -1085,6 +1085,15 @@ export function xaiModelManagerOptions(config?: XaiModelManagerConfig): ModelMan
 	return createSimpleOpenAICompletionsOptions("xai", "https://api.x.ai/v1", config);
 }
 
+export interface AgnesModelManagerConfig {
+	apiKey?: string;
+	baseUrl?: string;
+}
+
+export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): ModelManagerOptions<"openai-completions"> {
+	return createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
+}
+
 export interface XaiOAuthModelManagerConfig {
 	apiKey?: string;
 	baseUrl?: string;
