@@ -34,6 +34,7 @@ const DEFAULT_MODEL = "gemini-3-pro-image-preview";
 const DEFAULT_OPENROUTER_MODEL = "google/gemini-3-pro-image-preview";
 const DEFAULT_ANTIGRAVITY_MODEL = "gemini-3-pro-image";
 const DEFAULT_XAI_IMAGE_MODEL = "grok-imagine-image";
+const DEFAULT_AGNES_IMAGE_MODEL = "agnes-image-2.1-flash";
 const IMAGE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 const MAX_IMAGE_SIZE = 35 * 1024 * 1024;
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
@@ -539,6 +540,20 @@ async function findGeminiImageCredentials(
 	return null;
 }
 
+async function findAgnesImageCredentials(
+	modelRegistry?: ModelRegistry,
+	sessionId?: string,
+): Promise<ImageApiKey | null> {
+	if (modelRegistry) {
+		const apiKey = await modelRegistry.getApiKeyForProvider("agnes", sessionId);
+		if (apiKey) return { provider: "agnes", apiKey };
+		return null;
+	}
+	const apiKey = getEnvApiKey("agnes");
+	if (apiKey) return { provider: "agnes", apiKey };
+	return null;
+}
+
 async function findOpenAIHostedImageCredentials(
 	modelRegistry: ModelRegistry | undefined,
 	activeModel: Model | undefined,
@@ -604,6 +619,8 @@ function activeImageProvider(model: Model | undefined): Exclude<ImageProviderPre
 			return "openai";
 		case "google-antigravity":
 			return "antigravity";
+		case "agnes":
+			return "agnes";
 		case "xai":
 		case "xai-oauth":
 			return "xai";
@@ -641,6 +658,8 @@ async function findImageApiKey(
 	sessionId?: string,
 ): Promise<ImageApiKey | null> {
 	switch (provider) {
+		case "agnes":
+			return findAgnesImageCredentials(modelRegistry, sessionId);
 		case "openai":
 			return findOpenAIHostedImageCredentials(modelRegistry, activeModel, sessionId);
 		case "openai-codex":
@@ -1135,7 +1154,9 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 									? DEFAULT_OPENROUTER_MODEL
 									: provider === "xai"
 										? DEFAULT_XAI_IMAGE_MODEL
-										: DEFAULT_MODEL;
+										: provider === "agnes"
+											? DEFAULT_AGNES_IMAGE_MODEL
+											: DEFAULT_MODEL;
 					const resolvedModel = provider === "openrouter" ? resolveOpenRouterModel(model) : model;
 					if (
 						params.aspect_ratio &&
@@ -1455,6 +1476,94 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 								imageCount: xaiInlineImages.length,
 								imagePaths: xaiImagePaths,
 								images: xaiInlineImages,
+							},
+						};
+					}
+
+					if (provider === "agnes") {
+						const promptText = assemblePrompt(params);
+						const agnesModel = resolvedModel || DEFAULT_AGNES_IMAGE_MODEL;
+						const agnesApiKey: ApiKey = ctx.modelRegistry
+							? ctx.modelRegistry.resolver("agnes", { sessionId })
+							: apiKey.apiKey;
+
+						const size = resolveOpenAIImageSize(params.aspect_ratio, params.image_size) ?? "1024x1024";
+
+						const agnesBody = {
+							model: agnesModel,
+							prompt: promptText,
+							n: 1,
+							size,
+							response_format: "b64_json" as const,
+						};
+
+						const rawText = await withAuth(
+							agnesApiKey,
+							async key => {
+								const resp = await fetchImpl("https://apihub.agnes-ai.com/v1/images/generations", {
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+										Authorization: `Bearer ${key}`,
+									},
+									body: JSON.stringify(agnesBody),
+									signal: requestSignal,
+								});
+								const text = await resp.text();
+								if (!resp.ok) {
+									let message = text;
+									try {
+										const parsed = JSON.parse(text) as { error?: { message?: string } };
+										message = parsed.error?.message ?? message;
+									} catch {
+										// Keep raw text.
+									}
+									throw new ProviderHttpError(
+										`Agnes image request failed (${resp.status}): ${message}`,
+										resp.status,
+										{ headers: resp.headers },
+									);
+								}
+								return text;
+							},
+							{ signal: requestSignal },
+						);
+
+						const data = JSON.parse(rawText) as { data: Array<{ b64_json?: string; url?: string }> };
+						const agnesInlineImages: InlineImageData[] = [];
+						for (const item of data.data ?? []) {
+							if (item.b64_json) {
+								agnesInlineImages.push({ data: item.b64_json, mimeType: "image/png" });
+							} else if (item.url) {
+								agnesInlineImages.push(await loadImageFromUrl(item.url, fetchImpl, requestSignal));
+							}
+						}
+
+						if (agnesInlineImages.length === 0) {
+							return {
+								content: [{ type: "text", text: "No image data returned from Agnes." }],
+								details: {
+									provider,
+									model: agnesModel,
+									imageCount: 0,
+									imagePaths: [],
+									images: [],
+								},
+							};
+						}
+
+						const agnesImagePaths = await saveImagesToTemp(agnesInlineImages);
+
+						return {
+							content: [
+								{ type: "text", text: buildResponseSummary(provider, agnesModel, agnesImagePaths, undefined) },
+							],
+							details: {
+								provider,
+								model: agnesModel,
+								imageCount: agnesInlineImages.length,
+								imagePaths: agnesImagePaths,
+								images: agnesInlineImages,
 							},
 						};
 					}
