@@ -146,6 +146,9 @@
 - Fixed in-progress aborts awaiting `session_stop` extension handlers whose results would be discarded.
 - Fixed `/retry` reporting "Nothing to retry" after a stream stalled or aborted mid-tool-call.
 - Fixed locally consumed extension commands triggering automatic title generation and exposing their command text to the title model.
+### Added
+
+- Added Agnes AI (`agnes-ai.com`) as a first-class image generation provider. `providers.image: "agnes"` routes `generate_image` to Agnes's `/v1/images/generations` endpoint with `b64_json` response format and automatic aspect-ratio-to-size mapping. Agnes uses the OpenAI-completions wire protocol for chat; the image path is a separate dispatch case due to the older endpoint. Credentials via `AGNES_API_KEY` env var. Default model: `agnes-image-2.1-flash`.
 
 ## [17.0.7] - 2026-07-21
 
