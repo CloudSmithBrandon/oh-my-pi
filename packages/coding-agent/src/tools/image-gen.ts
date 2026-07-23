@@ -1522,6 +1522,11 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 					}
 
 					if (provider === "agnes") {
+						if (resolvedImages.length > 0) {
+							// Agnes /v1/images/generations does not accept input images; the /v1/images/edits
+							// endpoint expects multipart file uploads, not base64 data URLs.
+							throw new ProviderHttpError("Agnes image generation does not support input images", 501);
+						}
 						const promptText = assemblePrompt(params);
 						const agnesModel = resolvedModel || DEFAULT_AGNES_IMAGE_MODEL;
 						const agnesBaseUrl = resolveAgnesImageBaseUrl(ctx.modelRegistry, agnesModel);

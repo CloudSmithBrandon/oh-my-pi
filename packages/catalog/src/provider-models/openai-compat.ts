@@ -1091,6 +1091,13 @@ export interface AgnesModelManagerConfig {
 	fetch?: FetchImpl;
 }
 
+const AGNES_NON_CHAT_MODEL_ID_PATTERNS = [/(^|[/:._-])image([/:._-]|$)/i, /(^|[/:._-])video([/:._-]|$)/i] as const;
+
+function isAgnesChatModelId(id: string): boolean {
+	const normalized = id.trim().toLowerCase();
+	return !AGNES_NON_CHAT_MODEL_ID_PATTERNS.some(pattern => pattern.test(normalized));
+}
+
 export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): ModelManagerOptions<"openai-completions"> {
 	const options = createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
 	return {
@@ -1099,7 +1106,11 @@ export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): Mode
 			? {
 					fetchDynamicModels: async () => {
 						const models = await options.fetchDynamicModels?.();
-						return models?.map(model => ({ ...model, supportsTools: false })) ?? null;
+						return (
+							models
+								?.filter(model => isAgnesChatModelId(model.id))
+								.map(model => ({ ...model, supportsTools: false })) ?? null
+						);
 					},
 				}
 			: undefined),

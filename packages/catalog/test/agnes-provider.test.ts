@@ -4,7 +4,7 @@ import { agnesModelManagerOptions } from "@oh-my-pi/pi-catalog/provider-models/o
 import type { FetchImpl, ModelSpec } from "@oh-my-pi/pi-catalog/types";
 
 describe("Agnes provider discovery", () => {
-	test("discovers Agnes models with tool support disabled", async () => {
+	test("discovers Agnes chat models and filters image/video models", async () => {
 		const calls: Array<{ url: string; authorization: string | null }> = [];
 		const fetchMock: FetchImpl = async (input: string | URL | Request, init?: RequestInit) => {
 			const headers = new Headers(init?.headers);
@@ -28,6 +28,15 @@ describe("Agnes provider discovery", () => {
 							id: "agnes-image-2.1-flash",
 							object: "model",
 							name: "Agnes Image 2.1 Flash",
+							context_length: 32000,
+							max_completion_tokens: 4096,
+							input_modalities: ["text"],
+							pricing: { prompt: "0", completion: "0", input_cache_read: "0" },
+						},
+						{
+							id: "agnes-video-v2.0",
+							object: "model",
+							name: "Agnes Video v2.0",
 							context_length: 32000,
 							max_completion_tokens: 4096,
 							input_modalities: ["text"],
@@ -62,18 +71,8 @@ describe("Agnes provider discovery", () => {
 			supportsTools: false,
 		});
 
-		const image = models?.find(model => model.id === "agnes-image-2.1-flash");
-		expect(image).toBeDefined();
-		expect(image).toMatchObject({
-			provider: "agnes",
-			api: "openai-completions",
-			name: "Agnes Image 2.1 Flash",
-			reasoning: false,
-			input: ["text"],
-			contextWindow: 32000,
-			maxTokens: 4096,
-			supportsTools: false,
-		});
+		expect(models?.find(model => model.id === "agnes-image-2.1-flash")).toBeUndefined();
+		expect(models?.find(model => model.id === "agnes-video-v2.0")).toBeUndefined();
 	});
 
 	test("bundles Agnes models with tool support disabled", () => {
