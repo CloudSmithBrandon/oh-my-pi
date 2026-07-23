@@ -1256,4 +1256,42 @@ describe("imageGenTool", () => {
 		expect(requestUrls).toEqual(["https://apihub.agnes-ai.com/v1/images/generations"]);
 		expect(result.details?.provider).toBe("agnes");
 	});
+	it("falls back when Agnes receives input images it cannot handle", async () => {
+		setPreferredImageProvider("agnes");
+
+		const fetchMock: typeof fetch = (async () => {
+			throw new Error("fetch should not be called for Agnes with input images");
+		}) as unknown as typeof fetch;
+
+		const ctx: CustomToolContext = {
+			fetch: fetchMock,
+			sessionManager: {
+				getCwd: () => "/tmp",
+				getSessionId: () => "test-session",
+			} as unknown as ReadonlySessionManager,
+			modelRegistry: {
+				getApiKeyForProvider: async (provider: string) => (provider === "agnes" ? "test-agnes-key" : undefined),
+				getProviderBaseUrl: () => undefined,
+				getAll: () => [],
+				authStorage: { hasNonEnvCredential: () => false, rotateSessionCredential: async () => false },
+				resolver: () => async () => "test-agnes-key",
+			} as unknown as ModelRegistry,
+			model: undefined,
+			isIdle: () => true,
+			hasQueuedMessages: () => false,
+			abort: () => {},
+		};
+
+		await expect(
+			imageGenTool.execute(
+				"call-agnes-input-images",
+				{
+					subject: "edit this",
+					input: [{ data: `data:image/png;base64,${Buffer.from("fake-image").toString("base64")}` }],
+				},
+				undefined,
+				ctx,
+			),
+		).rejects.toThrow("Image generation failed for all credentialed providers: agnes");
+	});
 });
