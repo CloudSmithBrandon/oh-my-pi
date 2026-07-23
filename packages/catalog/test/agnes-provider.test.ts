@@ -75,10 +75,10 @@ describe("Agnes provider discovery", () => {
 		expect(models?.find(model => model.id === "agnes-video-v2.0")).toBeUndefined();
 	});
 
-	test("bundles Agnes models with tool support disabled", () => {
+	test("bundles only Agnes chat models with tool support disabled", () => {
 		const bundled =
 			(MODELS_JSON as unknown as Record<string, Record<string, ModelSpec<"openai-completions">>>).agnes ?? {};
 		expect(bundled["agnes-2.0-flash"]?.supportsTools).toBe(false);
-		expect(bundled["agnes-image-2.1-flash"]?.supportsTools).toBe(false);
+		expect(Object.keys(bundled)).toEqual(["agnes-2.0-flash"]);
 	});
 });
