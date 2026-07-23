@@ -2993,6 +2993,42 @@ export function veniceModelManagerOptions(
 }
 
 // ---------------------------------------------------------------------------
+// 14.25 LLM Gateway
+// ---------------------------------------------------------------------------
+
+export interface LLMGatewayModelManagerConfig {
+	apiKey?: string;
+	baseUrl?: string;
+	fetch?: FetchImpl;
+}
+
+export function llmGatewayModelManagerOptions(
+	config?: LLMGatewayModelManagerConfig,
+): ModelManagerOptions<"openai-completions"> {
+	const apiKey = config?.apiKey;
+	const baseUrl = config?.baseUrl ?? "https://api.llmgateway.io/v1";
+	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
+	return {
+		providerId: "llmgateway",
+		dynamicModelsAuthoritative: true,
+		...(apiKey && {
+			fetchDynamicModels: () =>
+				fetchOpenAICompatibleModels({
+					api: "openai-completions",
+					provider: "llmgateway",
+					baseUrl,
+					apiKey,
+					mapModel: (entry, defaults) => {
+						const reference = references.get(defaults.id);
+						return mapWithBundledReference(entry, defaults, reference);
+					},
+					fetch: config?.fetch,
+				}),
+		}),
+	};
+}
+
+// ---------------------------------------------------------------------------
 // 14.5 Baseten
 // ---------------------------------------------------------------------------
 
@@ -5060,6 +5096,10 @@ const MODELS_DEV_PROVIDER_DESCRIPTORS_SPECIALIZED: readonly ModelsDevProviderDes
 			const maxTokens = clampKimiK27CodeMaxTokens(model.id, model.maxTokens);
 			return maxTokens === model.maxTokens ? model : { ...model, maxTokens };
 		},
+	}),
+	// --- LLM Gateway ---
+	openAiCompletionsDescriptor("llmgateway", "llmgateway", "https://api.llmgateway.io/v1", {
+		filterModel: filterActiveToolCallModels,
 	}),
 	// --- Ollama Cloud ---
 	simpleModelsDevDescriptor("ollama-cloud", "ollama-cloud", "ollama-chat", "https://ollama.com"),
