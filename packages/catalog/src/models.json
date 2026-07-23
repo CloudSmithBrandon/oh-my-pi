@@ -78991,9 +78991,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.7868,
-				"output": 2.4728,
-				"cacheRead": 0.14612,
+				"input": 0.7826000000000001,
+				"output": 2.4596,
+				"cacheRead": 0.14534,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,

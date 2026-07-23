@@ -1102,6 +1102,7 @@ export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): Mode
 	const options = createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
 	return {
 		...options,
+		dynamicModelsAuthoritative: true,
 		...(options.fetchDynamicModels
 			? {
 					fetchDynamicModels: async () => {
