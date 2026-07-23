@@ -1088,10 +1088,34 @@ export function xaiModelManagerOptions(config?: XaiModelManagerConfig): ModelMan
 export interface AgnesModelManagerConfig {
 	apiKey?: string;
 	baseUrl?: string;
+	fetch?: FetchImpl;
+}
+
+const AGNES_NON_CHAT_MODEL_ID_PATTERNS = [/(^|[/:._-])image([/:._-]|$)/i, /(^|[/:._-])video([/:._-]|$)/i] as const;
+
+function isAgnesChatModelId(id: string): boolean {
+	const normalized = id.trim().toLowerCase();
+	return !AGNES_NON_CHAT_MODEL_ID_PATTERNS.some(pattern => pattern.test(normalized));
 }
 
 export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): ModelManagerOptions<"openai-completions"> {
-	return createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
+	const options = createSimpleOpenAICompletionsOptions("agnes", "https://apihub.agnes-ai.com/v1", config);
+	return {
+		...options,
+		dynamicModelsAuthoritative: true,
+		...(options.fetchDynamicModels
+			? {
+					fetchDynamicModels: async () => {
+						const models = await options.fetchDynamicModels?.();
+						return (
+							models
+								?.filter(model => isAgnesChatModelId(model.id))
+								.map(model => ({ ...model, supportsTools: false })) ?? null
+						);
+					},
+				}
+			: undefined),
+	};
 }
 
 export interface XaiOAuthModelManagerConfig {
