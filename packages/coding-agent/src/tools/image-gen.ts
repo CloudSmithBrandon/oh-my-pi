@@ -1579,7 +1579,10 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 						const agnesInlineImages: InlineImageData[] = [];
 						for (const item of data.data ?? []) {
 							if (item.b64_json) {
-								agnesInlineImages.push({ data: item.b64_json, mimeType: "image/png" });
+								agnesInlineImages.push({
+									data: item.b64_json,
+									mimeType: parseImageMetadata(Buffer.from(item.b64_json, "base64"))?.mimeType ?? "image/png",
+								});
 							} else if (item.url) {
 								agnesInlineImages.push(await loadImageFromUrl(item.url, fetchImpl, requestSignal));
 							}
