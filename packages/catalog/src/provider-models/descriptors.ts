@@ -235,7 +235,7 @@ export const CATALOG_PROVIDERS = [
 	{
 		id: "llmgateway",
 		defaultModel: "gpt-4o",
-		envVars: ["LLMGATEWAY_API_KEY"],
+		envVars: ["LLM_GATEWAY_API_KEY"],
 		createModelManagerOptions: (config: ModelManagerConfig) => llmGatewayModelManagerOptions(config),
 		dynamicModelsAuthoritative: true,
 		catalogDiscovery: { label: "LLM Gateway", allowUnauthenticated: true },

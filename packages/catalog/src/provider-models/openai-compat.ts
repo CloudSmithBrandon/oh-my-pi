@@ -3011,20 +3011,18 @@ export function llmGatewayModelManagerOptions(
 	return {
 		providerId: "llmgateway",
 		dynamicModelsAuthoritative: true,
-		...(apiKey && {
-			fetchDynamicModels: () =>
-				fetchOpenAICompatibleModels({
-					api: "openai-completions",
-					provider: "llmgateway",
-					baseUrl,
-					apiKey,
-					mapModel: (entry, defaults) => {
-						const reference = references.get(defaults.id);
-						return mapWithBundledReference(entry, defaults, reference);
-					},
-					fetch: config?.fetch,
-				}),
-		}),
+		fetchDynamicModels: () =>
+			fetchOpenAICompatibleModels({
+				api: "openai-completions",
+				provider: "llmgateway",
+				baseUrl,
+				apiKey,
+				mapModel: (entry, defaults) => {
+					const reference = references.get(defaults.id);
+					return mapWithBundledReference(entry, defaults, reference);
+				},
+				fetch: config?.fetch,
+			}),
 	};
 }
 
