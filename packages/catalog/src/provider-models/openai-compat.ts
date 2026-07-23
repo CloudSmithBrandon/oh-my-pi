@@ -2995,6 +2995,33 @@ export function veniceModelManagerOptions(
 // ---------------------------------------------------------------------------
 // 14.25 LLM Gateway
 // ---------------------------------------------------------------------------
+/**
+ * LLM Gateway proxies models from many providers. Its `/v1/models` list
+ * includes embeddings, image-generation, TTS, and speech models that are
+ * useless over `/v1/chat/completions`. Filter them out so only chat-capable
+ * models appear in the selectable catalog.
+ */
+const LLM_GATEWAY_NON_CHAT_MODEL_ID_PATTERN =
+	/(?:^|[/:._-])(?:audio|embed|embedding|embeddings|i2i|i2v|image|speech|t2i|t2v|tts|video)(?:$|[/:._-])/i;
+
+const LLM_GATEWAY_NON_CHAT_MODEL_ID_SUBSTRINGS = [
+	"dall-e",
+	"dalle",
+	"flux",
+	"imagen",
+	"sora",
+	"veo",
+	"whisper",
+] as const;
+
+function isLLMGatewayChatModelId(id: string): boolean {
+	const normalized = id.trim().toLowerCase();
+	if (!normalized) return false;
+	return (
+		!LLM_GATEWAY_NON_CHAT_MODEL_ID_PATTERN.test(normalized) &&
+		!LLM_GATEWAY_NON_CHAT_MODEL_ID_SUBSTRINGS.some(token => normalized.includes(token))
+	);
+}
 
 export interface LLMGatewayModelManagerConfig {
 	apiKey?: string;
@@ -3017,6 +3044,7 @@ export function llmGatewayModelManagerOptions(
 				provider: "llmgateway",
 				baseUrl,
 				apiKey,
+				filterModel: (_entry, model) => isLLMGatewayChatModelId(model.id),
 				mapModel: (entry, defaults) => {
 					const reference = references.get(defaults.id);
 					return mapWithBundledReference(entry, defaults, reference);
