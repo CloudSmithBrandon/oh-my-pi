@@ -3011,7 +3011,19 @@ interface LLMGatewayProviderEntry {
 	tools?: boolean;
 }
 
+// Image-generation-only model ID patterns that pass modality checks but are not chat models.
+const LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS = [
+	/(^|\/)gemini-[\w.-]*image/i,
+	/(^|\/)glm-image/i,
+	/(^|\/)qwen-image/i,
+	/(^|\/)dall-?e/i,
+	/(^|\/)flux/i,
+	/(^|\/)imagen/i,
+] as const;
+
 function isLLMGatewayChatModel(entry: OpenAICompatibleModelRecord): boolean {
+	const id = typeof entry.id === "string" ? entry.id : "";
+	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS.some(p => p.test(id))) return false;
 	const arch = entry.architecture as LLMGatewayModelArchitecture | undefined;
 	const outputModalities = arch?.output_modalities;
 	if (Array.isArray(outputModalities)) {
@@ -3042,6 +3054,7 @@ export function llmGatewayModelManagerOptions(
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
 	return {
 		providerId: "llmgateway",
+		cacheProviderId: `llmgateway:${Bun.hash(baseUrl).toString(36)}`,
 		dynamicModelsAuthoritative: true,
 		fetchDynamicModels: () =>
 			fetchOpenAICompatibleModels({
@@ -5037,21 +5050,22 @@ const MODELS_DEV_PROVIDER_DESCRIPTORS_CODING_PLANS: readonly ModelsDevProviderDe
 		},
 	),
 ];
-
 const filterActiveToolCallModels = (_id: string, m: ModelsDevModel): boolean => {
 	if (m.tool_call !== true) return false;
 	if (m.status === "deprecated") return false;
 	return true;
 };
+
 /**
- * Models.dev filter for LLM Gateway: active tool-capable models whose
- * declared output modalities (if present) include text. This catches
- * image-generation, TTS, and embedding models that `filterActiveToolCallModels`
+ * LLM Gateway models.dev filter: only allow text-output chat models.
+ * Excludes image-generation, TTS, and embedding models that `filterActiveToolCallModels`
  * misses because models.dev marks them as `tool_call: true`.
  */
 function filterLLMGatewayModelsDevModel(_id: string, m: ModelsDevModel): boolean {
 	if (m.tool_call !== true) return false;
 	if (m.status === "deprecated") return false;
+	// Exclude image-generation-only models that pass modality checks.
+	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS.some(p => p.test(_id))) return false;
 	const outputModalities = m.modalities?.output;
 	if (Array.isArray(outputModalities) && outputModalities.length > 0) {
 		return outputModalities.includes("text");
