@@ -238,6 +238,7 @@ export const CATALOG_PROVIDERS = [
 		envVars: ["LLM_GATEWAY_API_KEY"],
 		createModelManagerOptions: (config: ModelManagerConfig) => llmGatewayModelManagerOptions(config),
 		dynamicModelsAuthoritative: true,
+		allowUnauthenticated: true,
 		catalogDiscovery: { label: "LLM Gateway", allowUnauthenticated: true },
 	},
 	{

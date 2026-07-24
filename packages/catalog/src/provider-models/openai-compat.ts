@@ -3019,6 +3019,8 @@ const LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS = [
 	/(^|\/)dall-?e/i,
 	/(^|\/)flux/i,
 	/(^|\/)imagen/i,
+	/(^|\/)seedream/i,
+	/(^|\/)cogview/i,
 ] as const;
 
 function isLLMGatewayChatModel(entry: OpenAICompatibleModelRecord): boolean {

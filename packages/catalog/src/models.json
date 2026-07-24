@@ -37508,27 +37508,6 @@
 			"supportsComputerUse": false,
 			"supportsTools": false
 		},
-		"cogview-4": {
-			"id": "cogview-4",
-			"name": "CogView-4",
-			"api": "openai-completions",
-			"provider": "llmgateway",
-			"baseUrl": "https://api.llmgateway.io/v1",
-			"reasoning": false,
-			"input": [
-				"text"
-			],
-			"cost": {
-				"input": 0,
-				"output": 0,
-				"cacheRead": 0,
-				"cacheWrite": 0
-			},
-			"contextWindow": 2000,
-			"maxTokens": null,
-			"supportsComputerUse": false,
-			"supportsTools": false
-		},
 		"cosmos3-super-reasoner": {
 			"id": "cosmos3-super-reasoner",
 			"name": "Cosmos 3 Super Reasoner",
@@ -41856,90 +41835,6 @@
 				]
 			},
 			"supportsComputerUse": false
-		},
-		"seedream-4-0": {
-			"id": "seedream-4-0",
-			"name": "Seedream 4.0",
-			"api": "openai-completions",
-			"provider": "llmgateway",
-			"baseUrl": "https://api.llmgateway.io/v1",
-			"reasoning": false,
-			"input": [
-				"text"
-			],
-			"cost": {
-				"input": 0,
-				"output": 0,
-				"cacheRead": 0,
-				"cacheWrite": 0
-			},
-			"contextWindow": 2000,
-			"maxTokens": null,
-			"supportsComputerUse": false,
-			"supportsTools": false
-		},
-		"seedream-4-5": {
-			"id": "seedream-4-5",
-			"name": "Seedream 4.5",
-			"api": "openai-completions",
-			"provider": "llmgateway",
-			"baseUrl": "https://api.llmgateway.io/v1",
-			"reasoning": false,
-			"input": [
-				"text"
-			],
-			"cost": {
-				"input": 0,
-				"output": 0,
-				"cacheRead": 0,
-				"cacheWrite": 0
-			},
-			"contextWindow": 2000,
-			"maxTokens": null,
-			"supportsComputerUse": false,
-			"supportsTools": false
-		},
-		"seedream-5-0-lite": {
-			"id": "seedream-5-0-lite",
-			"name": "Seedream 5.0 Lite",
-			"api": "openai-completions",
-			"provider": "llmgateway",
-			"baseUrl": "https://api.llmgateway.io/v1",
-			"reasoning": false,
-			"input": [
-				"text"
-			],
-			"cost": {
-				"input": 0,
-				"output": 0,
-				"cacheRead": 0,
-				"cacheWrite": 0
-			},
-			"contextWindow": 2000,
-			"maxTokens": null,
-			"supportsComputerUse": false,
-			"supportsTools": false
-		},
-		"seedream-5-0-pro": {
-			"id": "seedream-5-0-pro",
-			"name": "Seedream 5.0 Pro",
-			"api": "openai-completions",
-			"provider": "llmgateway",
-			"baseUrl": "https://api.llmgateway.io/v1",
-			"reasoning": false,
-			"input": [
-				"text"
-			],
-			"cost": {
-				"input": 0,
-				"output": 0,
-				"cacheRead": 0,
-				"cacheWrite": 0
-			},
-			"contextWindow": 2000,
-			"maxTokens": null,
-			"supportsComputerUse": false,
-			"supportsTools": false
 		},
 		"sonar": {
 			"id": "sonar",
@@ -81412,8 +81307,8 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.38,
-				"output": 1.55,
+				"input": 0.3,
+				"output": 1,
 				"cacheRead": 0.09999999999999999,
 				"cacheWrite": 0
 			},
@@ -83783,9 +83678,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.8190000000000001,
-				"output": 2.574,
-				"cacheRead": 0.15209999999999999,
+				"input": 0.8176,
+				"output": 2.5696,
+				"cacheRead": 0.15183999999999997,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,
