@@ -169,14 +169,14 @@ describe("LLM Gateway runtime discovery", () => {
 		expect(models![0].supportsTools).toBeUndefined();
 	});
 
-	it("sets supportsTools=false when all providers advertise tools: false", async () => {
+	it("excludes models where all providers advertise tools: false", async () => {
 		const fetchImpl: FetchImpl = async () =>
 			new Response(
 				JSON.stringify({
 					data: [
 						{
-							id: "gpt-4o",
-							architecture: { output_modalities: ["text"] },
+							id: "image-only-model",
+							architecture: { output_modalities: ["text", "image"] },
 							providers: [{ tools: false }],
 						},
 					],
@@ -188,16 +188,16 @@ describe("LLM Gateway runtime discovery", () => {
 		const models = await options.fetchDynamicModels?.();
 
 		expect(models).toBeDefined();
-		expect(models![0].supportsTools).toBe(false);
+		expect(models!.length).toBe(0);
 	});
 
-	it("leaves supportsTools unset when at least one provider has tools: true", async () => {
+	it("includes models where at least one provider has tools: true", async () => {
 		const fetchImpl: FetchImpl = async () =>
 			new Response(
 				JSON.stringify({
 					data: [
 						{
-							id: "gpt-4o",
+							id: "chat-model",
 							architecture: { output_modalities: ["text"] },
 							providers: [{ tools: false }, { tools: true }],
 						},
@@ -210,6 +210,7 @@ describe("LLM Gateway runtime discovery", () => {
 		const models = await options.fetchDynamicModels?.();
 
 		expect(models).toBeDefined();
+		expect(models!.length).toBe(1);
 		expect(models![0].supportsTools).toBeUndefined();
 	});
 });

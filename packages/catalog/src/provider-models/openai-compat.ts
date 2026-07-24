@@ -3011,8 +3011,9 @@ interface LLMGatewayProviderEntry {
 	tools?: boolean;
 }
 
-// Image-generation-only model ID patterns that pass modality checks but are not chat models.
-const LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS = [
+// Name-based exclusion for the models.dev filter, which lacks per-provider tool metadata.
+// The runtime filter (isLLMGatewayChatModel) uses the richer provider metadata instead.
+const LLM_GATEWAY_IMAGE_ONLY_MODEL_ID_PATTERNS = [
 	/(^|\/)gemini-[\w.-]*image/i,
 	/(^|\/)glm-image/i,
 	/(^|\/)qwen-image/i,
@@ -3024,21 +3025,31 @@ const LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS = [
 ] as const;
 
 function isLLMGatewayChatModel(entry: OpenAICompatibleModelRecord): boolean {
-	const id = typeof entry.id === "string" ? entry.id : "";
-	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS.some(p => p.test(id))) return false;
 	const arch = entry.architecture as LLMGatewayModelArchitecture | undefined;
 	const outputModalities = arch?.output_modalities;
+	const providers = entry.providers as LLMGatewayProviderEntry[] | undefined;
+
+	// Models without text output are not chat models.
+	if (Array.isArray(outputModalities) && !outputModalities.includes("text")) {
+		return false;
+	}
+	// Models whose output includes text but ALL providers refuse tools are
+	// image-generation-only SKUs (e.g. gemini-*-image*, qwen-image-*,
+	// seedream-*, cogview-*). Real chat models always have at least one
+	// tools-capable provider.
+	if (Array.isArray(providers) && providers.length > 0 && providers.every(p => p.tools === false)) {
+		return false;
+	}
+	// If output_modalities is present and includes text, it's a chat model
+	// (provider check above already caught non-tool-capable ones).
 	if (Array.isArray(outputModalities)) {
 		return outputModalities.includes("text");
 	}
-	// Fallback for models without architecture metadata: check if any provider
-	// advertises tool support, which is a strong chat-capability signal.
-	const providers = entry.providers as LLMGatewayProviderEntry[] | undefined;
+	// Fallback for models without architecture metadata: check providers.
 	if (Array.isArray(providers)) {
 		return providers.some(p => p.tools === true);
 	}
-	// Last resort: if we can't determine modality, include the model rather
-	// than silently dropping a potentially valid chat model.
+	// Last resort: include rather than silently drop a potentially valid model.
 	return true;
 }
 
@@ -5075,10 +5086,9 @@ function filterLLMGatewayModelsDevModel(_id: string, m: ModelsDevModel): boolean
 	if (m.tool_call !== true) return false;
 	if (m.status === "deprecated") return false;
 	// Exclude image-generation-only models that pass modality checks.
-	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_PATTERNS.some(p => p.test(_id))) return false;
+	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_ID_PATTERNS.some(p => p.test(_id))) return false;
 	const outputModalities = m.modalities?.output;
 	if (Array.isArray(outputModalities) && outputModalities.length > 0) {
-		return outputModalities.includes("text");
 	}
 	return true;
 }
