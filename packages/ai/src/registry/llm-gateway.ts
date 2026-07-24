@@ -3,7 +3,7 @@ import type { OAuthLoginCallbacks } from "./oauth/types";
 import type { ProviderDefinition } from "./types";
 
 const AUTH_URL = "https://devpass.llmgateway.io";
-const API_BASE_URL = "https://api.llmgateway.io/v1";
+const DEFAULT_API_BASE_URL = "https://api.llmgateway.io/v1";
 const VALIDATION_MODEL = "gpt-4o-mini";
 
 /**
@@ -21,7 +21,7 @@ export const loginLLMGateway = createApiKeyLogin({
 	validation: {
 		kind: "chat-completions",
 		provider: "LLM Gateway",
-		baseUrl: API_BASE_URL,
+		baseUrl: () => Bun.env.LLM_GATEWAY_BASE_URL ?? DEFAULT_API_BASE_URL,
 		model: VALIDATION_MODEL,
 	},
 });

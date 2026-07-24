@@ -168,6 +168,50 @@ describe("LLM Gateway runtime discovery", () => {
 		// supportsTools is undefined (default = tools supported), not explicitly false
 		expect(models![0].supportsTools).toBeUndefined();
 	});
+
+	it("sets supportsTools=false when all providers advertise tools: false", async () => {
+		const fetchImpl: FetchImpl = async () =>
+			new Response(
+				JSON.stringify({
+					data: [
+						{
+							id: "gpt-4o",
+							architecture: { output_modalities: ["text"] },
+							providers: [{ tools: false }],
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+
+		const options = llmGatewayModelManagerOptions({ apiKey: "test-key", fetch: fetchImpl });
+		const models = await options.fetchDynamicModels?.();
+
+		expect(models).toBeDefined();
+		expect(models![0].supportsTools).toBe(false);
+	});
+
+	it("leaves supportsTools unset when at least one provider has tools: true", async () => {
+		const fetchImpl: FetchImpl = async () =>
+			new Response(
+				JSON.stringify({
+					data: [
+						{
+							id: "gpt-4o",
+							architecture: { output_modalities: ["text"] },
+							providers: [{ tools: false }, { tools: true }],
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+
+		const options = llmGatewayModelManagerOptions({ apiKey: "test-key", fetch: fetchImpl });
+		const models = await options.fetchDynamicModels?.();
+
+		expect(models).toBeDefined();
+		expect(models![0].supportsTools).toBeUndefined();
+	});
 });
 
 describe("LLM Gateway self-hosted (on-prem)", () => {

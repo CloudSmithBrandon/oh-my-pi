@@ -3052,7 +3052,16 @@ export function llmGatewayModelManagerOptions(
 				filterModel: entry => isLLMGatewayChatModel(entry),
 				mapModel: (entry, defaults) => {
 					const reference = references.get(defaults.id);
-					return mapWithBundledReference(entry, defaults, reference);
+					const mapped = mapWithBundledReference(entry, defaults, reference);
+					// Propagate tool-capability signal from provider metadata: if the
+					// model has text output but every provider advertises tools: false,
+					// mark the model as non-tool-capable so the coding-agent doesn't
+					// send tool payloads it can't handle.
+					const providers = entry.providers as LLMGatewayProviderEntry[] | undefined;
+					if (Array.isArray(providers) && providers.length > 0 && providers.every(p => p.tools === false)) {
+						return { ...mapped, supportsTools: false };
+					}
+					return mapped;
 				},
 				fetch: config?.fetch,
 			}),
