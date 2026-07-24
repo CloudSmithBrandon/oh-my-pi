@@ -269,8 +269,8 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 		expect(requestedUrls).toEqual(["https://custom.gateway.io/v1/models"]);
 	});
 
-	it("env var wins over config.baseUrl", async () => {
-		Bun.env.LLM_GATEWAY_BASE_URL = "http://env-wins:9000/v1";
+	it("config.baseUrl wins over LLM_GATEWAY_BASE_URL env var", async () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "http://env-should-lose:9000/v1";
 		const requestedUrls: string[] = [];
 		const fetchImpl: FetchImpl = async input => {
 			requestedUrls.push(input instanceof Request ? input.url : String(input));
@@ -282,12 +282,12 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 
 		const options = llmGatewayModelManagerOptions({
 			apiKey: "test-key",
-			baseUrl: "https://config-should-lose.io/v1",
+			baseUrl: "https://config-wins.io/v1",
 			fetch: fetchImpl,
 		});
 		await options.fetchDynamicModels?.();
 
-		expect(requestedUrls).toEqual(["http://env-wins:9000/v1/models"]);
+		expect(requestedUrls).toEqual(["https://config-wins.io/v1/models"]);
 	});
 
 	it("always returns fetchDynamicModels (even without API key)", () => {

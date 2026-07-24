@@ -3038,7 +3038,7 @@ export function llmGatewayModelManagerOptions(
 	config?: LLMGatewayModelManagerConfig,
 ): ModelManagerOptions<"openai-completions"> {
 	const apiKey = config?.apiKey;
-	const baseUrl = Bun.env.LLM_GATEWAY_BASE_URL ?? config?.baseUrl ?? "https://api.llmgateway.io/v1";
+	const baseUrl = config?.baseUrl ?? Bun.env.LLM_GATEWAY_BASE_URL ?? "https://api.llmgateway.io/v1";
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
 	return {
 		providerId: "llmgateway",
