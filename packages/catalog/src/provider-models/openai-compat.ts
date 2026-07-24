@@ -5110,7 +5110,8 @@ function filterLLMGatewayModelsDevModel(_id: string, m: ModelsDevModel): boolean
 	// Exclude image-generation-only models that pass modality checks.
 	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_ID_PATTERNS.some(p => p.test(_id))) return false;
 	const outputModalities = m.modalities?.output;
-	if (Array.isArray(outputModalities) && outputModalities.length > 0) {
+	if (Array.isArray(outputModalities) && outputModalities.length > 0 && !outputModalities.includes("text")) {
+		return false;
 	}
 	return true;
 }

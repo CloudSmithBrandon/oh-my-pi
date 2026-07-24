@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test";
 import { getBundledModel, getBundledModels } from "@oh-my-pi/pi-catalog/models";
 import { llmGatewayModelManagerOptions } from "@oh-my-pi/pi-catalog/provider-models/openai-compat";
 import type { FetchImpl } from "@oh-my-pi/pi-catalog/types";
+import { getCatalogProviderEntry } from "@oh-my-pi/pi-catalog/provider-models/descriptors";
 
 describe("LLM Gateway provider catalog", () => {
 	it("bundles chat models with correct provider and baseUrl", () => {
@@ -367,5 +368,77 @@ describe("LLM Gateway env base URL override", () => {
 			baseUrl: "https://explicit-gateway.example/v1",
 		});
 		expect(options.staticModels).toBeUndefined();
+	});
+});
+describe("LLM Gateway cache keying", () => {
+	it("cacheProviderId varies by base URL", () => {
+		const defaultOpts = llmGatewayModelManagerOptions({ apiKey: "test" });
+		const customOpts = llmGatewayModelManagerOptions({
+			apiKey: "test",
+			baseUrl: "https://custom-gateway.example/v1",
+		});
+		expect(defaultOpts.cacheProviderId).toBeDefined();
+		expect(customOpts.cacheProviderId).toBeDefined();
+		expect(defaultOpts.cacheProviderId).not.toBe(customOpts.cacheProviderId);
+	});
+});
+
+describe("LLM Gateway image-only name-pattern exclusion", () => {
+	it("excludes cogview and seedream by name pattern at runtime", async () => {
+		const fetchImpl: FetchImpl = async () =>
+			new Response(
+				JSON.stringify({
+					data: [
+						{ id: "cogview-4", architecture: { output_modalities: ["text", "image"] }, providers: [{ tools: false }] },
+						{ id: "seedream-5-0-pro", architecture: { output_modalities: ["text", "image"] }, providers: [{ tools: false }] },
+						{ id: "gpt-4o", architecture: { output_modalities: ["text"] }, providers: [{ tools: true }] },
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		const options = llmGatewayModelManagerOptions({ apiKey: "test", baseUrl: "https://api.llmgateway.io/v1", fetch: fetchImpl });
+		const models = await options.fetchDynamicModels?.();
+		expect(models).toBeDefined();
+		const ids = models!.map(m => m.id);
+		expect(ids).toContain("gpt-4o");
+		expect(ids).not.toContain("cogview-4");
+		expect(ids).not.toContain("seedream-5-0-pro");
+	});
+});
+
+describe("LLM Gateway resolveBaseUrl descriptor", () => {
+	const origEnv = Bun.env.LLM_GATEWAY_BASE_URL;
+	afterEach(() => {
+		if (origEnv == null) delete Bun.env.LLM_GATEWAY_BASE_URL;
+		else Bun.env.LLM_GATEWAY_BASE_URL = origEnv;
+	});
+
+	it("returns env var when bundled URL matches default", () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "https://self-hosted.example/v1";
+		const entry = getCatalogProviderEntry("llmgateway");
+		expect(entry?.resolveBaseUrl).toBeDefined();
+		const resolved = entry!.resolveBaseUrl!("https://api.llmgateway.io/v1");
+		expect(resolved).toBe("https://self-hosted.example/v1");
+	});
+
+	it("returns bundled URL when env var is absent", () => {
+		delete Bun.env.LLM_GATEWAY_BASE_URL;
+		const entry = getCatalogProviderEntry("llmgateway");
+		const resolved = entry!.resolveBaseUrl!("https://api.llmgateway.io/v1");
+		expect(resolved).toBe("https://api.llmgateway.io/v1");
+	});
+
+	it("preserves explicit non-default bundled URL over env var", () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "https://self-hosted.example/v1";
+		const entry = getCatalogProviderEntry("llmgateway");
+		const resolved = entry!.resolveBaseUrl!("https://custom-proxy.example/v1");
+		expect(resolved).toBe("https://custom-proxy.example/v1");
+	});
+
+	it("returns undefined when no bundled URL and no env var", () => {
+		delete Bun.env.LLM_GATEWAY_BASE_URL;
+		const entry = getCatalogProviderEntry("llmgateway");
+		const resolved = entry!.resolveBaseUrl!(undefined);
+		expect(resolved).toBeUndefined();
 	});
 });
