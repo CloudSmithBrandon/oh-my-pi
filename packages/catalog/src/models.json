@@ -17,7 +17,42 @@
 				"cacheWrite": 0
 			},
 			"contextWindow": 128000,
-			"maxTokens": 16384
+			"maxTokens": 16384,
+			"thinking": {
+				"mode": "effort",
+				"efforts": [
+					"minimal",
+					"low",
+					"medium",
+					"high",
+					"xhigh"
+				]
+			},
+			"compat": {
+				"omitReasoningEffort": true
+			}
+		},
+		"agnes-2.5-pro-alpha": {
+			"id": "agnes-2.5-pro-alpha",
+			"name": "agnes-2.5-pro-alpha",
+			"api": "openai-completions",
+			"provider": "agnes",
+			"baseUrl": "https://apihub.agnes-ai.com/v1",
+			"reasoning": false,
+			"input": [
+				"text"
+			],
+			"cost": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0
+			},
+			"contextWindow": null,
+			"maxTokens": null,
+			"compat": {
+				"omitReasoningEffort": true
+			}
 		}
 	},
 	"aimlapi": {
@@ -56888,6 +56923,36 @@
 			"maxTokens": 8000,
 			"supportsTools": false
 		},
+		"mindai/macaron-v1-venti": {
+			"id": "mindai/macaron-v1-venti",
+			"name": "Macaron V1 Venti",
+			"api": "openai-completions",
+			"provider": "novita",
+			"baseUrl": "https://api.novita.ai/openai/v1",
+			"reasoning": true,
+			"input": [
+				"text"
+			],
+			"cost": {
+				"input": 0,
+				"output": 0,
+				"cacheRead": 0,
+				"cacheWrite": 0
+			},
+			"contextWindow": 1048576,
+			"maxTokens": 131072,
+			"supportsTools": true,
+			"thinking": {
+				"mode": "effort",
+				"efforts": [
+					"minimal",
+					"low",
+					"medium",
+					"high",
+					"xhigh"
+				]
+			}
+		},
 		"minimax/minimax-m2": {
 			"id": "minimax/minimax-m2",
 			"name": "MiniMax M2",
@@ -71311,8 +71376,8 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.3,
-				"output": 1.2,
+				"input": 0.255,
+				"output": 1.02,
 				"cacheRead": 0.03,
 				"cacheWrite": 0
 			},
@@ -71426,9 +71491,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.3,
-				"output": 1.2,
-				"cacheRead": 0.06,
+				"input": 0.25,
+				"output": 1,
+				"cacheRead": 0.049999999999999996,
 				"cacheWrite": 0
 			},
 			"contextWindow": 204800,
@@ -72182,7 +72247,7 @@
 			],
 			"cost": {
 				"input": 0.71,
-				"output": 3.5,
+				"output": 3.49,
 				"cacheRead": 0.15,
 				"cacheWrite": 0
 			},
@@ -76526,13 +76591,13 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.14,
-				"output": 0.58,
-				"cacheRead": 0.035,
+				"input": 0.13199999999999998,
+				"output": 0.5279999999999999,
+				"cacheRead": 0.032999999999999995,
 				"cacheWrite": 0
 			},
 			"contextWindow": 262144,
-			"maxTokens": 262144,
+			"maxTokens": 128000,
 			"thinking": {
 				"mode": "effort",
 				"efforts": [
@@ -77653,9 +77718,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.777,
-				"output": 2.442,
-				"cacheRead": 0.14429999999999998,
+				"input": 0.8204,
+				"output": 2.5784000000000002,
+				"cacheRead": 0.15236,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,
@@ -86005,8 +86070,8 @@
 				"cacheRead": 0.3,
 				"cacheWrite": 0
 			},
-			"contextWindow": 1000000,
-			"maxTokens": 131072,
+			"contextWindow": 1048576,
+			"maxTokens": 1048576,
 			"thinking": {
 				"mode": "budget",
 				"efforts": [

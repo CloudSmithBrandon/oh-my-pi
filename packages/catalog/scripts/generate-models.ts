@@ -378,12 +378,11 @@ function dropAgnesNonChatModels(models: readonly ModelSpec[]): ModelSpec[] {
 		return !AGNES_NON_CHAT_MODEL_ID_PATTERNS.some(pattern => pattern.test(model.id));
 	});
 }
-/** Agnes uses `chat_template_kwargs.enable_thinking` / `thinking`, not `reasoning_effort`. Strip generic effort-based thinking metadata. */
-function stripAgnesThinking(models: readonly ModelSpec[]): ModelSpec[] {
+/** Agnes uses `chat_template_kwargs.enable_thinking` / `thinking`, not `reasoning_effort`. Set omitReasoningEffort compat to prevent the wire param. */
+function setAgnesOmitReasoningEffort(models: readonly ModelSpec[]): ModelSpec[] {
 	return models.map(model => {
-		if (model.provider !== "agnes" || !model.thinking) return model;
-		const { thinking: _, ...rest } = model;
-		return rest;
+		if (model.provider !== "agnes") return model;
+		return { ...model, compat: { ...model.compat, omitReasoningEffort: true } };
 	});
 }
 
@@ -671,7 +670,7 @@ async function generateModels() {
 	// policy re-bake so the aliases get the same baked thinking metadata.
 	allModels = projectOpenAIProReasoningAliases(allModels);
 	applyGeneratedModelPolicies(allModels);
-	allModels = stripAgnesThinking(allModels);
+	allModels = setAgnesOmitReasoningEffort(allModels);
 	linkOpenAIPromotionTargets(allModels);
 	// Collapse effort-tier variants AFTER the policy re-bake: live-discovery
 	// entries are already collapsed (rebake skips them); this pass folds

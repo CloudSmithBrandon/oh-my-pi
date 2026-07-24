@@ -1111,14 +1111,14 @@ export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): Mode
 						return (
 							models
 								?.filter(model => isAgnesChatModelId(model.id))
-								.map(model => {
+								.map(model => ({
+									...model,
 									// Agnes uses `chat_template_kwargs.enable_thinking` / `thinking`,
-									// not the standard `reasoning_effort` wire param. Strip the
-									// generic effort-based thinking metadata to prevent the
-									// openai-completions transport from emitting `reasoning_effort`.
-									const { thinking: _, ...rest } = model;
-									return rest;
-								}) ?? null
+									// not the standard `reasoning_effort` wire param. Set
+									// omitReasoningEffort to prevent the openai-completions transport
+									// from emitting `reasoning_effort` on the wire.
+									compat: { ...model.compat, omitReasoningEffort: true },
+								})) ?? null
 						);
 					},
 				}
