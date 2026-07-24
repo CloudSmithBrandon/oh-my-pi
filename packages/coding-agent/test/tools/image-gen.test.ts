@@ -1257,7 +1257,7 @@ describe("imageGenTool", () => {
 		expect(result.details?.provider).toBe("agnes");
 	});
 	it("falls back when Agnes receives input images it cannot handle", async () => {
-		setPreferredImageProvider("agnes");
+		setImageProviderOrder(["agnes"]);
 
 		const fetchMock: typeof fetch = (async () => {
 			throw new Error("fetch should not be called for Agnes with input images");
