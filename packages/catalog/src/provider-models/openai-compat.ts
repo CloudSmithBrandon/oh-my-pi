@@ -2996,31 +2996,35 @@ export function veniceModelManagerOptions(
 // 14.25 LLM Gateway
 // ---------------------------------------------------------------------------
 /**
- * LLM Gateway proxies models from many providers. Its `/v1/models` list
- * includes embeddings, image-generation, TTS, and speech models that are
- * useless over `/v1/chat/completions`. Filter them out so only chat-capable
- * models appear in the selectable catalog.
+ * LLM Gateway proxies models from many providers. Its `/v1/models` response
+ * includes rich per-model metadata — notably `architecture.output_modalities`
+ * and `providers[].tools`. Rather than pattern-matching model IDs (which
+ * breaks when new models ship), filter deterministically on the declared
+ * output modalities: keep models that can produce text output.
  */
-const LLM_GATEWAY_NON_CHAT_MODEL_ID_PATTERN =
-	/(?:^|[/:._-])(?:audio|embed|embedding|embeddings|i2i|i2v|image|speech|t2i|t2v|tts|video)(?:$|[/:._-])/i;
+interface LLMGatewayModelArchitecture {
+	output_modalities?: string[];
+}
 
-const LLM_GATEWAY_NON_CHAT_MODEL_ID_SUBSTRINGS = [
-	"dall-e",
-	"dalle",
-	"flux",
-	"imagen",
-	"sora",
-	"veo",
-	"whisper",
-] as const;
+interface LLMGatewayProviderEntry {
+	tools?: boolean;
+}
 
-function isLLMGatewayChatModelId(id: string): boolean {
-	const normalized = id.trim().toLowerCase();
-	if (!normalized) return false;
-	return (
-		!LLM_GATEWAY_NON_CHAT_MODEL_ID_PATTERN.test(normalized) &&
-		!LLM_GATEWAY_NON_CHAT_MODEL_ID_SUBSTRINGS.some(token => normalized.includes(token))
-	);
+function isLLMGatewayChatModel(entry: OpenAICompatibleModelRecord): boolean {
+	const arch = entry.architecture as LLMGatewayModelArchitecture | undefined;
+	const outputModalities = arch?.output_modalities;
+	if (Array.isArray(outputModalities)) {
+		return outputModalities.includes("text");
+	}
+	// Fallback for models without architecture metadata: check if any provider
+	// advertises tool support, which is a strong chat-capability signal.
+	const providers = entry.providers as LLMGatewayProviderEntry[] | undefined;
+	if (Array.isArray(providers)) {
+		return providers.some(p => p.tools === true);
+	}
+	// Last resort: if we can't determine modality, include the model rather
+	// than silently dropping a potentially valid chat model.
+	return true;
 }
 
 export interface LLMGatewayModelManagerConfig {
@@ -3044,7 +3048,7 @@ export function llmGatewayModelManagerOptions(
 				provider: "llmgateway",
 				baseUrl,
 				apiKey,
-				filterModel: (_entry, model) => isLLMGatewayChatModelId(model.id),
+				filterModel: entry => isLLMGatewayChatModel(entry),
 				mapModel: (entry, defaults) => {
 					const reference = references.get(defaults.id);
 					return mapWithBundledReference(entry, defaults, reference);
