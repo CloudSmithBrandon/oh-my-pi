@@ -1108,7 +1108,18 @@ export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): Mode
 			? {
 					fetchDynamicModels: async () => {
 						const models = await options.fetchDynamicModels?.();
-						return models?.filter(model => isAgnesChatModelId(model.id)) ?? null;
+						return (
+							models
+								?.filter(model => isAgnesChatModelId(model.id))
+								.map(model => {
+									// Agnes uses `chat_template_kwargs.enable_thinking` / `thinking`,
+									// not the standard `reasoning_effort` wire param. Strip the
+									// generic effort-based thinking metadata to prevent the
+									// openai-completions transport from emitting `reasoning_effort`.
+									const { thinking: _, ...rest } = model;
+									return rest;
+								}) ?? null
+						);
 					},
 				}
 			: undefined),

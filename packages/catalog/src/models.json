@@ -17,17 +17,7 @@
 				"cacheWrite": 0
 			},
 			"contextWindow": 128000,
-			"maxTokens": 16384,
-			"thinking": {
-				"mode": "effort",
-				"efforts": [
-					"minimal",
-					"low",
-					"medium",
-					"high",
-					"xhigh"
-				]
-			}
+			"maxTokens": 16384
 		}
 	},
 	"aimlapi": {
@@ -77663,9 +77653,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.7798,
-				"output": 2.4508,
-				"cacheRead": 0.14482,
+				"input": 0.777,
+				"output": 2.442,
+				"cacheRead": 0.14429999999999998,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,

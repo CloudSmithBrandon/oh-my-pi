@@ -1020,10 +1020,18 @@ describe("imageGenTool", () => {
 		await imageGenTool.execute("call-agnes-9-16", { subject: "x", aspect_ratio: "9:16" }, undefined, ctx);
 		generatedImagePaths.push(...[]);
 
+		await imageGenTool.execute("call-agnes-3-2", { subject: "x", aspect_ratio: "3:2" }, undefined, ctx);
+		generatedImagePaths.push(...[]);
+
+		await imageGenTool.execute("call-agnes-2-3", { subject: "x", aspect_ratio: "2:3" }, undefined, ctx);
+		generatedImagePaths.push(...[]);
+
 		expect(bodies).toEqual([
 			{ size: "1K", ratio: "1:1" },
 			{ size: "1K", ratio: "16:9" },
 			{ size: "1K", ratio: "9:16" },
+			{ size: "1K", ratio: "3:2" },
+			{ size: "1K", ratio: "2:3" },
 		]);
 	});
 

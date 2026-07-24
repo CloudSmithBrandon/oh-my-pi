@@ -452,11 +452,15 @@ export function setImageProviderOrder(providers: readonly string[]): void {
 	configuredImageProviderOrder = providers.filter(isImageProviderId);
 }
 function assertImageAspectRatioSupported(provider: ImageProvider, aspectRatio: ImageGenParams["aspect_ratio"]): void {
-	if (!aspectRatio || provider === "xai" || COMMON_IMAGE_ASPECT_RATIO_SET.has(aspectRatio)) {
+	const supported =
+		provider === "xai" ||
+		provider === "agnes" ||
+		(aspectRatio !== undefined && COMMON_IMAGE_ASPECT_RATIO_SET.has(aspectRatio));
+	if (!aspectRatio || supported) {
 		return;
 	}
 	throw new Error(
-		`Aspect ratio ${aspectRatio} is only supported by xAI image generation. Set providers.image to xai or use one of ${COMMON_IMAGE_ASPECT_RATIOS.join(", ")}.`,
+		`Aspect ratio ${aspectRatio} is not supported by ${provider} image generation. Use one of ${COMMON_IMAGE_ASPECT_RATIOS.join(", ")}.`,
 	);
 }
 
@@ -1185,6 +1189,7 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 					if (
 						params.aspect_ratio &&
 						provider !== "xai" &&
+						provider !== "agnes" &&
 						!COMMON_IMAGE_ASPECT_RATIO_SET.has(params.aspect_ratio)
 					) {
 						unsupportedAspectRatioProvider ??= provider;
