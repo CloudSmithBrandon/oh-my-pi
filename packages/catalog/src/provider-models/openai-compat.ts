@@ -3050,7 +3050,15 @@ export function llmGatewayModelManagerOptions(
 	config?: LLMGatewayModelManagerConfig,
 ): ModelManagerOptions<"openai-completions"> {
 	const apiKey = config?.apiKey;
-	const baseUrl = config?.baseUrl ?? Bun.env.LLM_GATEWAY_BASE_URL ?? "https://api.llmgateway.io/v1";
+	// The coding-agent registry always passes the bundled catalog default URL as
+	// config.baseUrl. Only treat config.baseUrl as "explicitly configured" when it
+	// differs from the bundled default — otherwise the env var wins over the
+	// bundled default so self-hosted gateways work without extra config.
+	const BUNDLED_DEFAULT_URL = "https://api.llmgateway.io/v1";
+	const hasExplicitConfig = config?.baseUrl != null && config.baseUrl !== BUNDLED_DEFAULT_URL;
+	const baseUrl = hasExplicitConfig
+		? config.baseUrl!
+		: (Bun.env.LLM_GATEWAY_BASE_URL ?? config?.baseUrl ?? BUNDLED_DEFAULT_URL);
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
 	return {
 		providerId: "llmgateway",

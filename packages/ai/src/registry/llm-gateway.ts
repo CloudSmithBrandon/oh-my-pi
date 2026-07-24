@@ -3,8 +3,6 @@ import type { OAuthLoginCallbacks } from "./oauth/types";
 import type { ProviderDefinition } from "./types";
 
 const AUTH_URL = "https://devpass.llmgateway.io";
-const DEFAULT_API_BASE_URL = "https://api.llmgateway.io/v1";
-const VALIDATION_MODEL = "gpt-4o-mini";
 
 /**
  * Login to LLM Gateway.
@@ -18,12 +16,10 @@ export const loginLLMGateway = createApiKeyLogin({
 	instructions: "Copy your DevPass API key from llmgateway.io",
 	promptMessage: "Paste your LLM Gateway API key",
 	placeholder: "llmgtwy_...",
-	validation: {
-		kind: "chat-completions",
-		provider: "LLM Gateway",
-		baseUrl: () => Bun.env.LLM_GATEWAY_BASE_URL ?? DEFAULT_API_BASE_URL,
-		model: VALIDATION_MODEL,
-	},
+	// Skip chat-completions validation: LLM Gateway is self-hostable, so
+	// the login flow cannot know which endpoint to validate against. The key
+	// is validated implicitly on the first request.
+	validation: null,
 });
 
 export const llmGatewayProvider = {

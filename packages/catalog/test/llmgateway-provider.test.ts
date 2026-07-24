@@ -289,6 +289,27 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 
 		expect(requestedUrls).toEqual(["https://config-wins.io/v1/models"]);
 	});
+	it("env var wins when config.baseUrl is the bundled default", async () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "http://env-wins:9000/v1";
+		const requestedUrls: string[] = [];
+		const fetchImpl: FetchImpl = async input => {
+			requestedUrls.push(input instanceof Request ? input.url : String(input));
+			return new Response(JSON.stringify({ data: [] }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		};
+
+		// Simulate registry passing the bundled default as config.baseUrl
+		const options = llmGatewayModelManagerOptions({
+			apiKey: "test-key",
+			baseUrl: "https://api.llmgateway.io/v1",
+			fetch: fetchImpl,
+		});
+		await options.fetchDynamicModels?.();
+
+		expect(requestedUrls).toEqual(["http://env-wins:9000/v1/models"]);
+	});
 
 	it("always returns fetchDynamicModels (even without API key)", () => {
 		const options = llmGatewayModelManagerOptions({});
