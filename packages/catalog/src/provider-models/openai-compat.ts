@@ -68,6 +68,7 @@ export interface ModelsDevModel {
 	};
 	modalities?: {
 		input?: string[];
+		output?: string[];
 	};
 	status?: string;
 	provider?: { npm?: string };
@@ -3037,7 +3038,7 @@ export function llmGatewayModelManagerOptions(
 	config?: LLMGatewayModelManagerConfig,
 ): ModelManagerOptions<"openai-completions"> {
 	const apiKey = config?.apiKey;
-	const baseUrl = config?.baseUrl ?? "https://api.llmgateway.io/v1";
+	const baseUrl = config?.baseUrl ?? Bun.env.LLM_GATEWAY_BASE_URL ?? "https://api.llmgateway.io/v1";
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
 	return {
 		providerId: "llmgateway",
@@ -5033,6 +5034,21 @@ const filterActiveToolCallModels = (_id: string, m: ModelsDevModel): boolean => 
 	if (m.status === "deprecated") return false;
 	return true;
 };
+/**
+ * Models.dev filter for LLM Gateway: active tool-capable models whose
+ * declared output modalities (if present) include text. This catches
+ * image-generation, TTS, and embedding models that `filterActiveToolCallModels`
+ * misses because models.dev marks them as `tool_call: true`.
+ */
+function filterLLMGatewayModelsDevModel(_id: string, m: ModelsDevModel): boolean {
+	if (m.tool_call !== true) return false;
+	if (m.status === "deprecated") return false;
+	const outputModalities = m.modalities?.output;
+	if (Array.isArray(outputModalities) && outputModalities.length > 0) {
+		return outputModalities.includes("text");
+	}
+	return true;
+}
 
 const MODELS_DEV_PROVIDER_DESCRIPTORS_GOOGLE_VERTEX: readonly ModelsDevProviderDescriptor[] = [
 	simpleModelsDevDescriptor("google-vertex", "google-vertex", "google-vertex", GOOGLE_VERTEX_BASE_URL, {
@@ -5129,7 +5145,7 @@ const MODELS_DEV_PROVIDER_DESCRIPTORS_SPECIALIZED: readonly ModelsDevProviderDes
 	}),
 	// --- LLM Gateway ---
 	openAiCompletionsDescriptor("llmgateway", "llmgateway", "https://api.llmgateway.io/v1", {
-		filterModel: filterActiveToolCallModels,
+		filterModel: filterLLMGatewayModelsDevModel,
 	}),
 	// --- Ollama Cloud ---
 	simpleModelsDevDescriptor("ollama-cloud", "ollama-cloud", "ollama-chat", "https://ollama.com"),

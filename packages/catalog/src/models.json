@@ -27616,7 +27616,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 32768,
 			"maxTokens": null
 		},
 		"google/gemini-2.5-flash-lite": {
@@ -27907,7 +27907,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 65536,
 			"maxTokens": null
 		},
 		"google/gemini-3.1-flash-lite": {
@@ -37350,7 +37350,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 32768,
 			"maxTokens": null
 		},
 		"gemini-2.5-flash-lite": {
@@ -37458,7 +37458,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": 1048000,
+			"contextWindow": 65536,
 			"maxTokens": 64000
 		},
 		"gemini-3.1-flash-image-preview": {
@@ -37477,7 +37477,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 65536,
 			"maxTokens": null
 		},
 		"gemini-3.1-flash-lite": {
@@ -38201,7 +38201,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"gpt-3.5-turbo": {
@@ -40489,7 +40489,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-image-edit-max": {
@@ -40508,7 +40508,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-image-edit-plus": {
@@ -40527,7 +40527,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-image-max": {
@@ -40546,7 +40546,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-image-max-2025-12-30": {
@@ -40565,7 +40565,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-image-plus": {
@@ -40584,7 +40584,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 2000,
 			"maxTokens": null
 		},
 		"qwen-max": {
@@ -82718,9 +82718,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.7868,
-				"output": 2.4728,
-				"cacheRead": 0.14612,
+				"input": 0.784,
+				"output": 2.464,
+				"cacheRead": 0.1456,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,
@@ -87292,7 +87292,7 @@
 				"cacheRead": 0,
 				"cacheWrite": 0
 			},
-			"contextWindow": null,
+			"contextWindow": 256000,
 			"maxTokens": null,
 			"compat": {
 				"supportsUsageInStreaming": false
