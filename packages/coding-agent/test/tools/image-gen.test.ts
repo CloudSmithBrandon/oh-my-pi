@@ -860,7 +860,8 @@ describe("imageGenTool", () => {
 			model: "agnes-image-2.1-flash",
 			prompt: "a cat.",
 			n: 1,
-			size: "1024x1024",
+			size: "1K",
+			ratio: "1:1",
 			return_base64: true,
 		});
 		expect(result.details?.provider).toBe("agnes");
@@ -976,13 +977,13 @@ describe("imageGenTool", () => {
 		expect(result.details?.imageCount).toBe(1);
 	});
 
-	it("maps Agnes aspect ratios to correct image sizes", async () => {
+	it("maps Agnes aspect ratios to correct ratio and tier size", async () => {
 		setImageProviderOrder(["agnes"]);
-		const sizes: string[] = [];
+		const bodies: Array<{ size: string; ratio: string }> = [];
 
 		const fetchMock: typeof fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
 			const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-			sizes.push(body.size as string);
+			bodies.push({ size: body.size as string, ratio: body.ratio as string });
 			return new Response(
 				JSON.stringify({
 					data: [{ b64_json: Buffer.from("aspect-image").toString("base64") }],
@@ -1019,7 +1020,11 @@ describe("imageGenTool", () => {
 		await imageGenTool.execute("call-agnes-9-16", { subject: "x", aspect_ratio: "9:16" }, undefined, ctx);
 		generatedImagePaths.push(...[]);
 
-		expect(sizes).toEqual(["1024x1024", "1536x1024", "1024x1536"]);
+		expect(bodies).toEqual([
+			{ size: "1K", ratio: "1:1" },
+			{ size: "1K", ratio: "16:9" },
+			{ size: "1K", ratio: "9:16" },
+		]);
 	});
 
 	it("throws ProviderHttpError on Agnes API failure with parsed error message", async () => {

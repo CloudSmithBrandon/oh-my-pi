@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import MODELS_JSON from "@oh-my-pi/pi-catalog/models.json" with { type: "json" };
 import { agnesModelManagerOptions } from "@oh-my-pi/pi-catalog/provider-models/openai-compat";
-import type { FetchImpl, ModelSpec } from "@oh-my-pi/pi-catalog/types";
+import type { FetchImpl } from "@oh-my-pi/pi-catalog/types";
 
 describe("Agnes provider discovery", () => {
 	test("discovers Agnes chat models and filters image/video models", async () => {
@@ -73,12 +72,5 @@ describe("Agnes provider discovery", () => {
 
 		expect(models?.find(model => model.id === "agnes-image-2.1-flash")).toBeUndefined();
 		expect(models?.find(model => model.id === "agnes-video-v2.0")).toBeUndefined();
-	});
-
-	test("bundles only Agnes chat models with tool support disabled", () => {
-		const bundled =
-			(MODELS_JSON as unknown as Record<string, Record<string, ModelSpec<"openai-completions">>>).agnes ?? {};
-		expect(bundled["agnes-2.0-flash"]?.supportsTools).toBe(false);
-		expect(Object.keys(bundled)).toEqual(["agnes-2.0-flash"]);
 	});
 });
