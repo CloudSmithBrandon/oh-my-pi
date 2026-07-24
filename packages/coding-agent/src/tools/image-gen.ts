@@ -1505,11 +1505,6 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 					}
 
 					if (provider === "agnes") {
-						if (resolvedImages.length > 0) {
-							// Agnes /v1/images/generations does not accept input images; the /v1/images/edits
-							// endpoint expects multipart file uploads, not base64 data URLs.
-							throw new ProviderHttpError("Agnes image generation does not support input images", 501);
-						}
 						const promptText = assemblePrompt(params);
 						const agnesModel = resolvedModel || DEFAULT_AGNES_IMAGE_MODEL;
 						const agnesBaseUrl = resolveAgnesImageBaseUrl(ctx.modelRegistry, agnesModel);
@@ -1523,13 +1518,21 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 
 						const size = resolveOpenAIImageSize(params.aspect_ratio, params.image_size) ?? "1024x1024";
 
-						const agnesBody = {
+						// Agnes Image 2.1 uses `return_base64: true` for text-to-image Base64 output.
+						// Image-to-image passes reference images via `extra_body.image` (Data URI Base64).
+						const agnesBody: Record<string, unknown> = {
 							model: agnesModel,
 							prompt: promptText,
 							n: 1,
 							size,
-							response_format: "b64_json" as const,
+							return_base64: true,
 						};
+						if (resolvedImages.length > 0) {
+							agnesBody.extra_body = {
+								image: resolvedImages.map(img => toDataUrl(img)),
+								response_format: "b64_json",
+							};
+						}
 
 						const rawText = await withAuth(
 							agnesApiKey,

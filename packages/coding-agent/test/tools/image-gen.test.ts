@@ -861,7 +861,7 @@ describe("imageGenTool", () => {
 			prompt: "a cat.",
 			n: 1,
 			size: "1024x1024",
-			response_format: "b64_json",
+			return_base64: true,
 		});
 		expect(result.details?.provider).toBe("agnes");
 		expect(result.details?.model).toBe("agnes-image-2.1-flash");
@@ -1256,11 +1256,23 @@ describe("imageGenTool", () => {
 		expect(requestUrls).toEqual(["https://apihub.agnes-ai.com/v1/images/generations"]);
 		expect(result.details?.provider).toBe("agnes");
 	});
-	it("falls back when Agnes receives input images it cannot handle", async () => {
+	it("sends input images to Agnes via extra_body.image", async () => {
 		setImageProviderOrder(["agnes"]);
 
-		const fetchMock: typeof fetch = (async () => {
-			throw new Error("fetch should not be called for Agnes with input images");
+		let requestBody: Record<string, unknown> | undefined;
+
+		const fakeImageData = Buffer.from("fake-input-image").toString("base64");
+		const fakeInputDataUrl = `data:image/png;base64,${fakeImageData}`;
+		const fakeOutputData = Buffer.from("fake-agnes-output").toString("base64");
+
+		const fetchMock: typeof fetch = (async (_input: string | URL | Request, init?: RequestInit) => {
+			requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+			return new Response(
+				JSON.stringify({
+					data: [{ b64_json: fakeOutputData }],
+				}),
+				{ status: 200, headers: { "content-type": "application/json" } },
+			);
 		}) as unknown as typeof fetch;
 
 		const ctx: CustomToolContext = {
@@ -1282,16 +1294,24 @@ describe("imageGenTool", () => {
 			abort: () => {},
 		};
 
-		await expect(
-			imageGenTool.execute(
-				"call-agnes-input-images",
-				{
-					subject: "edit this",
-					input: [{ data: `data:image/png;base64,${Buffer.from("fake-image").toString("base64")}` }],
-				},
-				undefined,
-				ctx,
-			),
-		).rejects.toThrow("Image generation failed for all credentialed providers: agnes");
+		const result = await imageGenTool.execute(
+			"call-agnes-input-images",
+			{
+				subject: "edit this",
+				input: [{ data: fakeInputDataUrl }],
+			},
+			undefined,
+			ctx,
+		);
+		generatedImagePaths.push(...(result.details?.imagePaths ?? []));
+
+		expect(requestBody).toBeDefined();
+		const extraBody = (requestBody as Record<string, unknown>).extra_body as Record<string, unknown>;
+		expect(extraBody).toBeDefined();
+		expect(extraBody.image).toEqual([fakeInputDataUrl]);
+		expect(extraBody.response_format).toBe("b64_json");
+		expect((requestBody as Record<string, unknown>).return_base64).toBe(true);
+		expect(result.details?.provider).toBe("agnes");
+		expect(result.details?.imageCount).toBe(1);
 	});
 });
