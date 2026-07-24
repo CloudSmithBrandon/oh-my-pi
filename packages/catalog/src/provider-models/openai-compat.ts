@@ -1108,11 +1108,7 @@ export function agnesModelManagerOptions(config?: AgnesModelManagerConfig): Mode
 			? {
 					fetchDynamicModels: async () => {
 						const models = await options.fetchDynamicModels?.();
-						return (
-							models
-								?.filter(model => isAgnesChatModelId(model.id))
-								.map(model => ({ ...model, supportsTools: false })) ?? null
-						);
+						return models?.filter(model => isAgnesChatModelId(model.id)) ?? null;
 					},
 				}
 			: undefined),

@@ -67,7 +67,6 @@ describe("Agnes provider discovery", () => {
 			input: ["text"],
 			contextWindow: 128000,
 			maxTokens: 16384,
-			supportsTools: false,
 		});
 
 		expect(models?.find(model => model.id === "agnes-image-2.1-flash")).toBeUndefined();

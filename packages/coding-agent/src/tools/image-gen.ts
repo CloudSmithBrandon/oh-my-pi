@@ -1519,7 +1519,9 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 						// Agnes Image 2.1 uses `ratio` + tiered `size` instead of exact pixel dimensions.
 						const agnesSize =
 							params.image_size === "1024x1536" || params.image_size === "1536x1024" ? "2K" : "1K";
-						const agnesRatio = params.aspect_ratio ?? "1:1";
+						const agnesRatio =
+							params.aspect_ratio ??
+							(params.image_size === "1536x1024" ? "3:2" : params.image_size === "1024x1536" ? "2:3" : "1:1");
 
 						// Agnes Image 2.1 uses `return_base64: true` for text-to-image Base64 output.
 						// Image-to-image passes reference images via `extra_body.image` (Data URI Base64).
