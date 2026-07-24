@@ -244,7 +244,12 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 			);
 		};
 
-		const options = llmGatewayModelManagerOptions({ apiKey: "local-key", fetch: fetchImpl });
+		// Pass bundled default as baseUrl (simulates coding-agent)
+		const options = llmGatewayModelManagerOptions({
+			apiKey: "local-key",
+			baseUrl: "https://api.llmgateway.io/v1",
+			fetch: fetchImpl,
+		});
 		await options.fetchDynamicModels?.();
 
 		expect(requestedUrls).toEqual(["http://my-gateway.local:8000/v1/models"]);
@@ -325,14 +330,22 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 });
 describe("LLM Gateway env base URL override", () => {
 	const origEnv = Bun.env.LLM_GATEWAY_BASE_URL;
+	const BUNDLED_DEFAULT = "https://api.llmgateway.io/v1";
 	afterEach(() => {
 		if (origEnv == null) delete Bun.env.LLM_GATEWAY_BASE_URL;
 		else Bun.env.LLM_GATEWAY_BASE_URL = origEnv;
 	});
 
-	it("patches bundled models baseUrl via staticModels when env var is set", () => {
+	it("ignores env var when config.baseUrl is absent (generator case)", () => {
 		Bun.env.LLM_GATEWAY_BASE_URL = "https://my-gateway.example/v1";
 		const options = llmGatewayModelManagerOptions({ apiKey: "test" });
+		// Generator passes no baseUrl — env var must not leak into catalog
+		expect(options.staticModels).toBeUndefined();
+	});
+
+	it("applies env var via staticModels when config.baseUrl is the bundled default", () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "https://my-gateway.example/v1";
+		const options = llmGatewayModelManagerOptions({ apiKey: "test", baseUrl: BUNDLED_DEFAULT });
 		expect(options.staticModels).toBeDefined();
 		const models = options.staticModels!;
 		expect(models.length).toBeGreaterThan(0);
@@ -343,7 +356,7 @@ describe("LLM Gateway env base URL override", () => {
 
 	it("does not set staticModels when env var is absent", () => {
 		delete Bun.env.LLM_GATEWAY_BASE_URL;
-		const options = llmGatewayModelManagerOptions({ apiKey: "test" });
+		const options = llmGatewayModelManagerOptions({ apiKey: "test", baseUrl: BUNDLED_DEFAULT });
 		expect(options.staticModels).toBeUndefined();
 	});
 
@@ -353,7 +366,6 @@ describe("LLM Gateway env base URL override", () => {
 			apiKey: "test",
 			baseUrl: "https://explicit-gateway.example/v1",
 		});
-		// hasExplicitConfig=true, so env var is ignored — no staticModels patch
 		expect(options.staticModels).toBeUndefined();
 	});
 });

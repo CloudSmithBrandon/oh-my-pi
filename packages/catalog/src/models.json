@@ -76362,13 +76362,13 @@
 				"image"
 			],
 			"cost": {
-				"input": 0.09999999999999999,
-				"output": 0.35,
+				"input": 0.14,
+				"output": 0.39999999999999997,
 				"cacheRead": 0.09999999999999999,
 				"cacheWrite": 0
 			},
 			"contextWindow": 262144,
-			"maxTokens": 8192,
+			"maxTokens": 262144,
 			"thinking": {
 				"mode": "effort",
 				"efforts": [
@@ -83678,9 +83678,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.8148,
-				"output": 2.5608,
-				"cacheRead": 0.15132,
+				"input": 0.8106,
+				"output": 2.5476,
+				"cacheRead": 0.15054,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,

@@ -2162,7 +2162,9 @@ export class ModelRegistry {
 	 * Get the base URL associated with a provider, if any model defines one.
 	 */
 	getProviderBaseUrl(provider: string): string | undefined {
-		return this.#models.find(m => m.provider === provider && m.baseUrl)?.baseUrl;
+		const bundledBaseUrl = this.#models.find(m => m.provider === provider && m.baseUrl)?.baseUrl;
+		const descriptor = PROVIDER_DESCRIPTORS.find(d => d.providerId === provider);
+		return descriptor?.resolveBaseUrl ? descriptor.resolveBaseUrl(bundledBaseUrl) : bundledBaseUrl;
 	}
 	/**
 	 * Get provider-level headers without including per-model overrides.

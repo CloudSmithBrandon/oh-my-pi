@@ -240,6 +240,15 @@ export const CATALOG_PROVIDERS = [
 		dynamicModelsAuthoritative: true,
 		allowUnauthenticated: true,
 		catalogDiscovery: { label: "LLM Gateway", allowUnauthenticated: true },
+		resolveBaseUrl: (bundledBaseUrl) => {
+			const envUrl = Bun.env.LLM_GATEWAY_BASE_URL;
+			if (!envUrl) return bundledBaseUrl;
+			// Env var wins when no explicit config or when config matches bundled default
+			const BUNDLED_DEFAULT = "https://api.llmgateway.io/v1";
+			return bundledBaseUrl == null || bundledBaseUrl === BUNDLED_DEFAULT
+				? envUrl
+				: bundledBaseUrl;
+		},
 	},
 	{
 		id: "lm-studio",
@@ -538,6 +547,7 @@ export const PROVIDER_DESCRIPTORS: readonly ProviderDescriptor[] = CATALOG_ENTRY
 			catalogDiscovery: provider.catalogDiscovery
 				? { ...provider.catalogDiscovery, envVars: provider.catalogDiscovery.envVars ?? provider.envVars ?? [] }
 				: undefined,
+			resolveBaseUrl: provider.resolveBaseUrl,
 		},
 	];
 });

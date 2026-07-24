@@ -3063,20 +3063,26 @@ export function llmGatewayModelManagerOptions(
 	config?: LLMGatewayModelManagerConfig,
 ): ModelManagerOptions<"openai-completions"> {
 	const apiKey = config?.apiKey;
-	// The coding-agent registry always passes the bundled catalog default URL as
-	// config.baseUrl. Only treat config.baseUrl as "explicitly configured" when it
-	// differs from the bundled default — otherwise the env var wins over the
-	// bundled default so self-hosted gateways work without extra config.
 	const BUNDLED_DEFAULT_URL = "https://api.llmgateway.io/v1";
-	const hasExplicitConfig = config?.baseUrl != null && config.baseUrl !== BUNDLED_DEFAULT_URL;
-	const baseUrl = hasExplicitConfig
-		? config.baseUrl!
-		: (Bun.env.LLM_GATEWAY_BASE_URL ?? config?.baseUrl ?? BUNDLED_DEFAULT_URL);
+	const envUrl = Bun.env.LLM_GATEWAY_BASE_URL;
+	// Resolve the base URL:
+	//  - Generator (config.baseUrl absent): always use hosted default,
+	//    ignore env var to prevent self-hosted models leaking into the
+	//    committed catalog.
+	//  - Coding-agent with bundled default: env var wins so self-hosted
+	//    gateways work without extra config.
+	//  - Coding-agent with explicit URL: explicit config wins.
+	const baseUrl =
+		config?.baseUrl == null
+			? BUNDLED_DEFAULT_URL
+			: config.baseUrl !== BUNDLED_DEFAULT_URL
+				? config.baseUrl
+				: (envUrl ?? BUNDLED_DEFAULT_URL);
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
 	// When the env var overrides the bundled default, patch every bundled
 	// model's baseUrl so the session uses the self-hosted URL from the start
 	// (before async discovery re-fetches the model list).
-	const envOverride = !hasExplicitConfig && Bun.env.LLM_GATEWAY_BASE_URL;
+	const envOverride = envUrl && config?.baseUrl === BUNDLED_DEFAULT_URL ? envUrl : undefined;
 	const staticModels = envOverride
 		? (getBundledModels("llmgateway") as ModelSpec<"openai-completions">[]).map(m =>
 				m.baseUrl === BUNDLED_DEFAULT_URL ? { ...m, baseUrl: envOverride } : m,
