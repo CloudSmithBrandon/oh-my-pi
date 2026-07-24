@@ -54,6 +54,7 @@ interface ImageApiKey {
 	apiKey: ApiKey;
 	projectId?: string;
 	model?: Model;
+	baseUrl?: string;
 }
 
 const COMMON_IMAGE_ASPECT_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
@@ -566,11 +567,12 @@ async function findAgnesImageCredentials(
 ): Promise<ImageApiKey | null> {
 	if (modelRegistry) {
 		const effectiveModelId = modelId ?? DEFAULT_AGNES_IMAGE_MODEL;
+		const baseUrl = resolveAgnesImageBaseUrl(modelRegistry, effectiveModelId);
 		const apiKey = await modelRegistry.getApiKeyForProvider("agnes", sessionId, {
-			baseUrl: resolveAgnesImageBaseUrl(modelRegistry, effectiveModelId),
+			baseUrl,
 			modelId: effectiveModelId,
 		});
-		if (apiKey) return { provider: "agnes", apiKey };
+		if (apiKey) return { provider: "agnes", apiKey, baseUrl };
 		return null;
 	}
 	const apiKey = getEnvApiKey("agnes");
@@ -1512,7 +1514,7 @@ export const imageGenTool: CustomTool<typeof imageGenSchema, ImageGenToolDetails
 					if (provider === "agnes") {
 						const promptText = assemblePrompt(params);
 						const agnesModel = resolvedModel || DEFAULT_AGNES_IMAGE_MODEL;
-						const agnesBaseUrl = resolveAgnesImageBaseUrl(ctx.modelRegistry, agnesModel);
+						const agnesBaseUrl = apiKey.baseUrl ?? resolveAgnesImageBaseUrl(ctx.modelRegistry, agnesModel);
 						const agnesApiKey: ApiKey = ctx.modelRegistry
 							? ctx.modelRegistry.resolver("agnes", {
 									sessionId,
