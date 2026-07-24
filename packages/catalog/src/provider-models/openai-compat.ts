@@ -3095,6 +3095,12 @@ export function llmGatewayModelManagerOptions(
 					if (Array.isArray(providers) && providers.length > 0 && providers.every(p => p.tools === false)) {
 						return { ...mapped, supportsTools: false };
 					}
+					// When live providers support tools, clear any stale
+					// supportsTools: false carried from the bundled reference.
+					if (Array.isArray(providers) && providers.some(p => p.tools === true)) {
+						const { supportsTools: _, ...rest } = mapped;
+						return rest;
+					}
 					return mapped;
 				},
 				fetch: config?.fetch,
