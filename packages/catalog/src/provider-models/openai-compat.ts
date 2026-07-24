@@ -3025,23 +3025,23 @@ const LLM_GATEWAY_IMAGE_ONLY_MODEL_ID_PATTERNS = [
 ] as const;
 
 function isLLMGatewayChatModel(entry: OpenAICompatibleModelRecord): boolean {
+	const id = (entry as { id?: string }).id ?? "";
 	const arch = entry.architecture as LLMGatewayModelArchitecture | undefined;
 	const outputModalities = arch?.output_modalities;
 	const providers = entry.providers as LLMGatewayProviderEntry[] | undefined;
 
+	// Exclude known image-only models by name pattern (they may report text
+	// in output_modalities but are not genuine chat models).
+	if (LLM_GATEWAY_IMAGE_ONLY_MODEL_ID_PATTERNS.some(p => p.test(id))) {
+		return false;
+	}
 	// Models without text output are not chat models.
 	if (Array.isArray(outputModalities) && !outputModalities.includes("text")) {
 		return false;
 	}
-	// Models whose output includes text but ALL providers refuse tools are
-	// image-generation-only SKUs (e.g. gemini-*-image*, qwen-image-*,
-	// seedream-*, cogview-*). Real chat models always have at least one
-	// tools-capable provider.
-	if (Array.isArray(providers) && providers.length > 0 && providers.every(p => p.tools === false)) {
-		return false;
-	}
-	// If output_modalities is present and includes text, it's a chat model
-	// (provider check above already caught non-tool-capable ones).
+	// If output_modalities is present and includes text, it's a chat model.
+	// Models that lack native tools (all providers report tools:false) are
+	// kept here and marked supportsTools:false in mapModel — not excluded.
 	if (Array.isArray(outputModalities)) {
 		return outputModalities.includes("text");
 	}
@@ -3073,10 +3073,20 @@ export function llmGatewayModelManagerOptions(
 		? config.baseUrl!
 		: (Bun.env.LLM_GATEWAY_BASE_URL ?? config?.baseUrl ?? BUNDLED_DEFAULT_URL);
 	const references = createBundledReferenceMap<"openai-completions">("llmgateway");
+	// When the env var overrides the bundled default, patch every bundled
+	// model's baseUrl so the session uses the self-hosted URL from the start
+	// (before async discovery re-fetches the model list).
+	const envOverride = !hasExplicitConfig && Bun.env.LLM_GATEWAY_BASE_URL;
+	const staticModels = envOverride
+		? (getBundledModels("llmgateway") as ModelSpec<"openai-completions">[]).map(m =>
+				m.baseUrl === BUNDLED_DEFAULT_URL ? { ...m, baseUrl: envOverride } : m,
+			)
+		: undefined;
 	return {
 		providerId: "llmgateway",
 		cacheProviderId: `llmgateway:${Bun.hash(baseUrl).toString(36)}`,
 		dynamicModelsAuthoritative: true,
+		...(staticModels ? { staticModels } : undefined),
 		fetchDynamicModels: () =>
 			fetchOpenAICompatibleModels({
 				api: "openai-completions",

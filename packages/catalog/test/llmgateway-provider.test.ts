@@ -169,13 +169,13 @@ describe("LLM Gateway runtime discovery", () => {
 		expect(models![0].supportsTools).toBeUndefined();
 	});
 
-	it("excludes models where all providers advertise tools: false", async () => {
+	it("keeps text models with all-providers-tools-false as supportsTools:false", async () => {
 		const fetchImpl: FetchImpl = async () =>
 			new Response(
 				JSON.stringify({
 					data: [
 						{
-							id: "image-only-model",
+							id: "non-tool-chat-model",
 							architecture: { output_modalities: ["text", "image"] },
 							providers: [{ tools: false }],
 						},
@@ -188,7 +188,8 @@ describe("LLM Gateway runtime discovery", () => {
 		const models = await options.fetchDynamicModels?.();
 
 		expect(models).toBeDefined();
-		expect(models!.length).toBe(0);
+		expect(models!.length).toBe(1);
+		expect(models![0].supportsTools).toBe(false);
 	});
 
 	it("includes models where at least one provider has tools: true", async () => {
@@ -320,5 +321,39 @@ describe("LLM Gateway self-hosted (on-prem)", () => {
 	it("is marked dynamicModelsAuthoritative", () => {
 		const options = llmGatewayModelManagerOptions({ apiKey: "test" });
 		expect(options.dynamicModelsAuthoritative).toBe(true);
+	});
+});
+describe("LLM Gateway env base URL override", () => {
+	const origEnv = Bun.env.LLM_GATEWAY_BASE_URL;
+	afterEach(() => {
+		if (origEnv == null) delete Bun.env.LLM_GATEWAY_BASE_URL;
+		else Bun.env.LLM_GATEWAY_BASE_URL = origEnv;
+	});
+
+	it("patches bundled models baseUrl via staticModels when env var is set", () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "https://my-gateway.example/v1";
+		const options = llmGatewayModelManagerOptions({ apiKey: "test" });
+		expect(options.staticModels).toBeDefined();
+		const models = options.staticModels!;
+		expect(models.length).toBeGreaterThan(0);
+		for (const m of models) {
+			expect(m.baseUrl).toBe("https://my-gateway.example/v1");
+		}
+	});
+
+	it("does not set staticModels when env var is absent", () => {
+		delete Bun.env.LLM_GATEWAY_BASE_URL;
+		const options = llmGatewayModelManagerOptions({ apiKey: "test" });
+		expect(options.staticModels).toBeUndefined();
+	});
+
+	it("does not patch when config.baseUrl is explicitly different from bundled", () => {
+		Bun.env.LLM_GATEWAY_BASE_URL = "https://env-gateway.example/v1";
+		const options = llmGatewayModelManagerOptions({
+			apiKey: "test",
+			baseUrl: "https://explicit-gateway.example/v1",
+		});
+		// hasExplicitConfig=true, so env var is ignored — no staticModels patch
+		expect(options.staticModels).toBeUndefined();
 	});
 });

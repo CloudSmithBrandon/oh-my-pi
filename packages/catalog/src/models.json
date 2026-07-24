@@ -83678,9 +83678,9 @@
 				"text"
 			],
 			"cost": {
-				"input": 0.8176,
-				"output": 2.5696,
-				"cacheRead": 0.15183999999999997,
+				"input": 0.8148,
+				"output": 2.5608,
+				"cacheRead": 0.15132,
 				"cacheWrite": 0
 			},
 			"contextWindow": 1048576,
